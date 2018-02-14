@@ -10,13 +10,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.PlaceDetectionClient;
+import com.google.android.gms.location.places.PlaceLikelihood;
+import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -39,6 +45,7 @@ public class MainActivity extends AppCompatActivity
      * @see #onRequestPermissionsResult(int, String[], int[])
      */
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private static final String LOG_TAG = MainActivity.class.getName();
 
     /**
      * Flag indicating whether a requested permission has been denied after returning in
@@ -48,9 +55,9 @@ public class MainActivity extends AppCompatActivity
 
     private GoogleMap mMap;
 
-    private RequestQueue mQueue;
-    private StringRequest mStringRequest;
     private SupportMapFragment mFragment;
+
+    private PlaceDetectionClient mPlaceDetectionClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,24 +65,10 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_maps);
 
         initVariables();
-
-        //mQueue.add(mStringRequest);
     }
 
     private void initVariables() {
-        /*mQueue = Volley.newRequestQueue(context);
-        mStringRequest = new StringRequest(Request.Method.GET, "http://tron.ninja", new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                System.out.println("Response is " + response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println("Error!");
-                System.err.println(error);
-            }
-        });*/
+        mPlaceDetectionClient = Places.getPlaceDetectionClient(this, null);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage("Is this place poppin'?");
@@ -100,7 +93,18 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dialog.show();
+                try {
+                    Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
+                    placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
+                        @Override
+                        public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
+                            System.out.println(task.getResult());
+                        }
+                    });
+                } catch (SecurityException e) {
+                    System.out.println("Ehhhhh, error.");
+                    Log.e(LOG_TAG, "initVariables: securityException", e);
+                }
             }
         });
 
@@ -128,14 +132,19 @@ public class MainActivity extends AppCompatActivity
         if (PermissionUtils.isLocationGranted(this)) {
             System.out.println("Location permission granted.");
             FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(this);
-            client.getLastLocation().addOnCompleteListener(this, new OnCompleteListener<Location>() {
-                @Override
-                public void onComplete(@NonNull Task<Location> task) {
-                    Location location = task.getResult();
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
+            client.requestLocationUpdates(new LocationRequest(), getLocationListener(), null);
 
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15));
+            Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
+            placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
+                @Override
+                public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
+                    PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
+                    for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+                        Log.i(LOG_TAG, String.format("Place '%s' has likelihood: %g",
+                                placeLikelihood.getPlace().getName(),
+                                placeLikelihood.getLikelihood()));
+                    }
+                    likelyPlaces.release();
                 }
             });
         }
@@ -170,6 +179,20 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onMyLocationClick(@NonNull Location location) {
         Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
+    }
+
+    public LocationCallback getLocationListener () {
+        return new LocationCallback(){
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                super.onLocationResult(locationResult);
+                double latitude = locationResult.getLastLocation().getLatitude();
+                double longitude = locationResult.getLastLocation().getLongitude();
+                System.out.println("Update received.");
+
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15));
+            }
+        };
     }
 
     /**
