@@ -2,6 +2,7 @@ package com.paranoiddevs.whats_poppin;
 
 import android.Manifest;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -11,9 +12,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -64,18 +64,19 @@ public class MainActivity extends AppCompatActivity
         mMapFragment.getMapAsync(this);
 
         ActionBar bar = getSupportActionBar();
-
-        TextView textView = new TextView(this);
-        textView.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        textView.setText(getResources().getString(R.string.app_name));
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View customView = inflater.inflate(R.layout.action_bar, null);
+        TextView textView = customView.findViewById(R.id.appbar_title);
+        textView.setText(R.string.app_name);
         textView.setTextColor(Color.WHITE);
-        textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
-        textView.setTextSize(30);
-        textView.setF;
+        textView.setTextSize(35);
+        textView.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
 
         if (bar != null) {
-            bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
-            bar.setCustomView(textView);
+            bar.setDisplayShowHomeEnabled(false);
+            bar.setDisplayShowTitleEnabled(false);
+            bar.setDisplayShowCustomEnabled(true);
+            bar.setCustomView(customView);
         } else System.out.println("bar == null");
     }
 
