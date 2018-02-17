@@ -1,224 +1,230 @@
 package com.paranoiddevs.whats_poppin;
 
-import android.annotation.SuppressLint;
-import android.content.DialogInterface;
-import android.content.pm.PackageManager;
+import android.Manifest;
+import android.graphics.Color;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.PlaceDetectionClient;
-import com.google.android.gms.location.places.PlaceLikelihood;
-import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.paranoiddevs.whats_poppin.models.PlaceJSON;
 
-import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static com.paranoiddevs.whats_poppin.PermissionUtils.isPermissionGranted;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.List;
+
+import static com.paranoiddevs.whats_poppin.util.RequestHelper.buildRequest;
+import static com.paranoiddevs.whats_poppin.util.RequestHelper.downloadUrl;
 
 public class MainActivity extends AppCompatActivity
         implements OnMapReadyCallback,
-        GoogleMap.OnMyLocationClickListener,
-        GoogleMap.OnMyLocationButtonClickListener {
-
-    /**
-     * Request code for location permission request.
-     *
-     * @see #onRequestPermissionsResult(int, String[], int[])
-     */
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
     private static final String LOG_TAG = MainActivity.class.getName();
 
-    /**
-     * Flag indicating whether a requested permission has been denied after returning in
-     * {@link #onRequestPermissionsResult(int, String[], int[])}.
-     */
-    private boolean mPermissionDenied = false;
-
-    private GoogleMap mMap;
-
-    private SupportMapFragment mFragment;
-
-    private PlaceDetectionClient mPlaceDetectionClient;
+    GoogleMap mGoogleMap;
+    SupportMapFragment mMapFragment;
+    LocationRequest mLocationRequest;
+    GoogleApiClient mGoogleApiClient;
+    Location mLastLocation;
+    Marker mCurrLocationMarker;
+    boolean firstRun = true;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        initVariables();
+        mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mMapFragment.getMapAsync(this);
+
+        ActionBar bar = getSupportActionBar();
+
+        TextView textView = new TextView(this);
+        textView.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        textView.setText(getResources().getString(R.string.app_name));
+        textView.setTextColor(Color.WHITE);
+        textView.setGravity(View.TEXT_ALIGNMENT_CENTER);
+        textView.setTextSize(30);
+        textView.setF;
+
+        if (bar != null) {
+            bar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM);
+            bar.setCustomView(textView);
+        } else System.out.println("bar == null");
     }
 
-    private void initVariables() {
-        mPlaceDetectionClient = Places.getPlaceDetectionClient(this, null);
+    @Override
+    protected void onPause() {
+        super.onPause();
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Is this place poppin'?");
-
-        builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                System.out.println("OK has been pressed!");
-            }
-        });
-
-        builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialogInterface, int i) {
-                System.out.println("CANCEL has been pressed!");
-            }
-        });
-
-        final AlertDialog dialog = builder.create();
-
-        FloatingActionButton fab = findViewById(R.id.map_fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                try {
-                    Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
-                    placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
-                        @Override
-                        public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                            System.out.println(task.getResult());
-                        }
-                    });
-                } catch (SecurityException e) {
-                    System.out.println("Ehhhhh, error.");
-                    Log.e(LOG_TAG, "initVariables: securityException", e);
-                }
-            }
-        });
-
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        mFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mFragment.getMapAsync(this);
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     */
-    @SuppressLint("MissingPermission")
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0)
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        mLastLocation = location;
+        if (mCurrLocationMarker != null) {
+            mCurrLocationMarker.remove();
+        }
+
+        // Place curr location marker
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(latLng);
+        markerOptions.title("Current Position");
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+        mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+        // Move map camera
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        mGoogleMap.animateCamera(CameraUpdateFactory.zoomTo(14));
+
+        // Query places w/ curr location
+        StringBuilder builder = buildRequest(location);
+        PlacesTask task = new PlacesTask();
+        task.execute(builder.toString());
+
+        if (mGoogleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        }
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+        mGoogleMap = googleMap;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0)
+            mGoogleMap.setMyLocationEnabled(true);
+        mGoogleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
 
-        mMap.setOnMyLocationButtonClickListener(this);
-        mMap.setOnMyLocationClickListener(this);
-        enableMyLocation();
-
-        if (PermissionUtils.isLocationGranted(this)) {
-            System.out.println("Location permission granted.");
-            FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(this);
-            client.requestLocationUpdates(new LocationRequest(), getLocationListener(), null);
-
-            Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
-            placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
-                @Override
-                public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
-                    PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
-                    for (PlaceLikelihood placeLikelihood : likelyPlaces) {
-                        Log.i(LOG_TAG, String.format("Place '%s' has likelihood: %g",
-                                placeLikelihood.getPlace().getName(),
-                                placeLikelihood.getLikelihood()));
-                    }
-                    likelyPlaces.release();
-                }
-            });
-        }
+        buildGoogleApiClient();
+        mGoogleApiClient.connect();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) return;
-
-        if (isPermissionGranted(permissions, grantResults, ACCESS_FINE_LOCATION))
-            enableMyLocation();
-        else mPermissionDenied = true;
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
     }
 
-    @Override
-    public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        // Return false so that we don't consume the event and the default behavior still occurs
-        // (the camera animates to the user's current position).
-        return false;
-    }
+    private class PlacesTask extends AsyncTask<String, Integer, String> {
+        String data = null;
 
-    @Override
-    protected void onResumeFragments() {
-        super.onResumeFragments();
-        if (mPermissionDenied) {
-            showMissingPermissionError();
-            mPermissionDenied = false;
-        }
-    }
-
-    @Override
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
-    }
-
-    public LocationCallback getLocationListener () {
-        return new LocationCallback(){
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                super.onLocationResult(locationResult);
-                double latitude = locationResult.getLastLocation().getLatitude();
-                double longitude = locationResult.getLastLocation().getLongitude();
-                System.out.println("Update received.");
-
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15));
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                data = downloadUrl(strings[0]);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "doInBackground: ", e);
             }
-        };
-    }
 
-    /**
-     * Enables the My Location layer if the fine location permission has been granted.
-     */
-    private boolean enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(this, ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Permission to access the location is missing.
-            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
-                    ACCESS_FINE_LOCATION, true);
-            return false;
-        } else if (mMap != null) {
-            // Access to the location has been granted to the app.
-            mMap.setMyLocationEnabled(true);
-            return true;
+            return data;
         }
 
-        return false;
+        @Override
+        protected void onPostExecute(String result) {
+            ParserTask parserTask = new ParserTask();
+
+            parserTask.execute(result);
+        }
     }
 
-    /**
-     * Displays a dialog with error message explaining that the location permission is missing.
-     */
-    private void showMissingPermissionError() {
-        PermissionUtils.PermissionDeniedDialog
-                .newInstance(true).show(getSupportFragmentManager(), "dialog");
+    private class ParserTask extends AsyncTask<String, Integer, List<HashMap<String, String>>> {
+        JSONObject jObject;
+
+        @Override
+        protected List<HashMap<String, String>> doInBackground(String... strings) {
+            List<HashMap<String, String>> places = null;
+            PlaceJSON placeJSON = new PlaceJSON();
+
+            try {
+                jObject = new JSONObject(strings[0]);
+                places = placeJSON.parse(jObject);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            return places;
+        }
+
+        @Override
+        protected void onPostExecute(List<HashMap<String, String>> list) {
+            if (!firstRun)
+                mGoogleMap.clear();
+
+            firstRun = false;
+
+            for (int x = 0; x < list.size(); x++) {
+                // Creating a marker
+                MarkerOptions options = new MarkerOptions();
+
+                // Getting a place from the places list
+                HashMap<String, String> hmPlace = list.get(x);
+
+                // Getting LatLng
+                double lat = Double.parseDouble(hmPlace.get("lat"));
+                double lng = Double.parseDouble(hmPlace.get("lng"));
+
+                // Getting name
+                String name = hmPlace.get("place_name");
+                String vicinity = hmPlace.get("vicinity");
+                LatLng latLng = new LatLng(lat, lng);
+
+                options.position(latLng);
+                options.title(name + " : " + vicinity);
+                options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+
+                mGoogleMap.addMarker(options);
+            }
+        }
     }
 }
