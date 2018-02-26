@@ -1,4 +1,4 @@
-package com.paranoiddevs.whats_poppin.util;
+package com.paranoiddevs.whats_poppin.utils;
 
 import android.location.Location;
 import android.util.Log;

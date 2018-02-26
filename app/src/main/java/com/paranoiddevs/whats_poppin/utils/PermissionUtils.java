@@ -14,19 +14,36 @@
  * limitations under the License.
  */
 
-package com.paranoiddevs.whats_poppin;
+package com.paranoiddevs.whats_poppin.utils;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
+
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.paranoiddevs.whats_poppin.R;
+
+import static com.paranoiddevs.whats_poppin.activities.MainActivity.LOCATION_PERMISSION_REQUEST_CODE;
 
 /**
  * Utility class for access to runtime permissions.
@@ -49,7 +66,8 @@ public abstract class PermissionUtils {
 
         }
     }
-    public static boolean isLocationGranted (Context context) {
+
+    public static boolean isLocationGranted(Context context) {
         return ActivityCompat.checkSelfPermission(context,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
@@ -184,6 +202,54 @@ public abstract class PermissionUtils {
                         .show();
                 getActivity().finish();
             }
+        }
+    }
+
+    /**
+     * Check for location settings. If disabled, prompt an alert dialog for user. Pulled from
+     * http://bit.ly/2HNfEda on 02/25/18.
+     *
+     * @param activity The calling activity
+     * @param locationRequest The LocationRequest you wish to execute if permissions permit
+     */
+    public static void checkForLocationSettings(final Activity activity, LocationRequest locationRequest) {
+        try {
+            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+            builder.addLocationRequest(locationRequest);
+            SettingsClient settingsClient = LocationServices.getSettingsClient(activity);
+
+            settingsClient.checkLocationSettings(builder.build())
+                    .addOnSuccessListener(activity, new OnSuccessListener<LocationSettingsResponse>() {
+                        @Override
+                        public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                            //Setting is success...
+                            Toast.makeText(activity, "Enabled the Location successfully. Now you can press the buttons..", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(activity, new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            int statusCode = ((ApiException) e).getStatusCode();
+                            switch (statusCode) {
+                                case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                                    try {
+                                        // Show the dialog by calling startResolutionForResult(), and check the
+                                        // result in onActivityResult().
+                                        ResolvableApiException rae = (ResolvableApiException) e;
+                                        rae.startResolutionForResult(activity, LOCATION_PERMISSION_REQUEST_CODE);
+                                    } catch (IntentSender.SendIntentException sie) {
+                                        sie.printStackTrace();
+                                    }
+                                    break;
+                                case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                                    Toast.makeText(activity, "Setting change is not available.Try in another device.", Toast.LENGTH_LONG).show();
+                            }
+
+                        }
+                    });
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
