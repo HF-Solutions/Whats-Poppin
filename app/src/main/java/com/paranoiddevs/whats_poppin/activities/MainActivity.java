@@ -37,6 +37,7 @@ import java.util.List;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static com.paranoiddevs.whats_poppin.utils.RequestHelper.buildRequest;
 import static com.paranoiddevs.whats_poppin.utils.RequestHelper.downloadUrl;
 
 public class MainActivity extends BaseActivity
@@ -67,23 +68,29 @@ public class MainActivity extends BaseActivity
   LocationCallback mLocationCallback = new LocationCallback() {
     @Override
     public void onLocationResult(LocationResult locationResult) {
-      for (Location location : locationResult.getLocations()) {
-        Log.i("MapsActivity", "Location: " + location.getLatitude() + " " + location.getLongitude());
-        mLastLocation = location;
-        if (mCurrLocationMarker != null) {
-          mCurrLocationMarker.remove();
+      if (mFirstRun) {
+        for (Location location : locationResult.getLocations()) {
+          Log.i("MapsActivity", "Location: " + location.getLatitude() + " " + location.getLongitude());
+          mLastLocation = location;
+          if (mCurrLocationMarker != null) {
+            mCurrLocationMarker.remove();
+          }
+
+          //Place current location marker
+          LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+          MarkerOptions markerOptions = new MarkerOptions();
+          markerOptions.position(latLng);
+          markerOptions.title("Current Position");
+          markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+          mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
+
+          //move map camera
+          mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14));// Query places w/ curr location
+
+          StringBuilder builder = buildRequest(location);
+          PlacesTask task = new PlacesTask();
+          task.execute(builder.toString());
         }
-
-        //Place current location marker
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(latLng);
-        markerOptions.title("Current Position");
-        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-        mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
-
-        //move map camera
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
       }
     }
   };
