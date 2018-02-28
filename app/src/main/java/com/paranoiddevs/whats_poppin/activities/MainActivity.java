@@ -1,21 +1,21 @@
 package com.paranoiddevs.whats_poppin.activities;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
+import android.annotation.SuppressLint;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.widget.Toast;
+import android.view.View;
 
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -27,7 +27,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.paranoiddevs.whats_poppin.R;
 import com.paranoiddevs.whats_poppin.models.PlaceJSON;
-import com.paranoiddevs.whats_poppin.utils.PermissionUtils;
+import com.paranoiddevs.whats_poppin.utils.BasicListeners;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,171 +35,46 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.paranoiddevs.whats_poppin.utils.RequestHelper.buildRequest;
+import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static com.paranoiddevs.whats_poppin.utils.RequestHelper.downloadUrl;
 
 public class MainActivity extends BaseActivity
-        implements OnMapReadyCallback,
-        GoogleMap.OnMyLocationButtonClickListener,
-        GoogleMap.OnMyLocationClickListener,
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
-    private static final String LOG_TAG = "MainActivity";
+        implements OnMapReadyCallback {
+  private static final String LOG_TAG = "MainActivity";
 
-    /**
-     * Flag indicating whether a requested permission has been denied after returning in
-     * {@link #onRequestPermissionsResult(int, String[], int[])}.
-     */
-    private boolean mPermissionDenied = false;
+  GoogleMap mGoogleMap;
+  SupportMapFragment mMapFragment;
+  LocationRequest mLocationRequest;
+  GoogleApiClient mGoogleApiClient;
+  boolean mFirstRun = true;
 
-    GoogleMap mGoogleMap;
-    SupportMapFragment mMapFragment;
-    LocationRequest mLocationRequest;
-    GoogleApiClient mGoogleApiClient;
-    boolean mFirstRun = true;
+  Location mLastLocation;
+  Marker mCurrLocationMarker;
 
-    Location mLastLocation;
-    Marker mCurrLocationMarker;
+  /**
+   * Request code for location permission request.
+   *
+   * @see #onRequestPermissionsResult(int, String[], int[])
+   */
+  public static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
-    /**
-     * Request code for location permission request.
-     *
-     * @see #onRequestPermissionsResult(int, String[], int[])
-     */
-    public static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+  /**
+   * For the new FusedLocationProviderClient support.
+   */
+  private FusedLocationProviderClient mClient;
 
+  LocationCallback mLocationCallback = new LocationCallback() {
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
-
-        mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mMapFragment.getMapAsync(this);
-
-        setupActionBar();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
-            return;
-        }
-
-        if (PermissionUtils.isPermissionGranted(permissions, grantResults,
-                Manifest.permission.ACCESS_FINE_LOCATION)) {
-            // Enable the my location layer if the permission has been granted.
-            enableMyLocation();
-        } else {
-            // Display the missing permission error dialog when the fragments resume.
-            mPermissionDenied = true;
-        }
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mGoogleMap = googleMap;
-
-        mGoogleMap.setOnMyLocationClickListener(this);
-        mGoogleMap.setOnMyLocationButtonClickListener(this);
-
-        enableMyLocation();
-    }
-
-    @Override
-    protected void onResumeFragments() {
-        super.onResumeFragments();
-        if (mPermissionDenied) {
-            // Permission was not granted, display error dialog.
-            showMissingPermissionError();
-            mPermissionDenied = false;
-        }
-    }
-
-    @Override
-    public boolean onMyLocationButtonClick() {
-        // Return false so that we don't consume the event and the default behavior still occurs
-        // (the camera animates to the user's current position).
-        return false;
-    }
-
-    @Override
-    public void onMyLocationClick(@NonNull Location location) {
-        Toast.makeText(this, "Current location:\n" + location, Toast.LENGTH_LONG).show();
-    }
-
-    /**
-     * Displays a dialog with error message explaining that the location permission is missing.
-     */
-    private void showMissingPermissionError() {
-        PermissionUtils.PermissionDeniedDialog
-                .newInstance(true).show(getSupportFragmentManager(), "dialog");
-    }
-
-    /**
-     * Enables the My Location layer if the fine location permission has been granted.
-     */
-    private void enableMyLocation() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Permission to access the location is missing.
-            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
-                    Manifest.permission.ACCESS_FINE_LOCATION, true);
-        } else if (mGoogleMap != null) {
-            // Access to the location has been granted to the app.
-            mGoogleMap.setMyLocationEnabled(true);
-        }
-
-        buildGoogleApiClient();
-        mGoogleApiClient.connect();
-    }
-
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        }
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
-            mLocationRequest = new LocationRequest();
-            mLocationRequest.setInterval(1000);
-            mLocationRequest.setFastestInterval(1000);
-            mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationResult(LocationResult locationResult) {
+      for (Location location : locationResult.getLocations()) {
+        Log.i("MapsActivity", "Location: " + location.getLatitude() + " " + location.getLongitude());
         mLastLocation = location;
         if (mCurrLocationMarker != null) {
-            mCurrLocationMarker.remove();
+          mCurrLocationMarker.remove();
         }
 
-        // Place curr location marker
+        //Place current location marker
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
@@ -207,89 +82,172 @@ public class MainActivity extends BaseActivity
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
         mCurrLocationMarker = mGoogleMap.addMarker(markerOptions);
 
-        // Move map camera
-        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mGoogleMap.animateCamera(CameraUpdateFactory.zoomTo(14));
+        //move map camera
+        mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 11));
+      }
+    }
+  };
 
-        // Query places w/ curr location
-        StringBuilder builder = buildRequest(location);
-        PlacesTask task = new PlacesTask();
-        task.execute(builder.toString());
+  @Override
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_maps);
 
-        if (mGoogleApiClient != null) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        }
+    mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+    mMapFragment.getMapAsync(this);
+
+    mClient = LocationServices.getFusedLocationProviderClient(this);
+
+    setupActionBar();
+  }
+
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    Log.i(LOG_TAG, "onRequestPermissionsResult()");
+
+    if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+      if (grantResults.length <= 0) {
+        Log.i(LOG_TAG, "onRequestPermissionsResult: User interaction was cancelled.");
+      } else if (grantResults[0] == PERMISSION_GRANTED) {
+        toggleLocationUpdates();
+      } else {
+        // Permission denied
+        showSnackbar("Permission denied explanation.", "Settings?", BasicListeners.permissionDeniedSnackbarListener(this));
+      }
+    }
+  }
+
+  @Override
+  public void onMapReady(GoogleMap googleMap) {
+    mGoogleMap = googleMap;
+
+    mLocationRequest = new LocationRequest();
+    mLocationRequest.setInterval(120000); // two minute interval
+    mLocationRequest.setFastestInterval(60000);
+    mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+
+    if (checkPermissions()) {
+      //Location Permission already granted
+      toggleLocationUpdates();
+    } else {
+      //Request Location Permission
+      requestPermissions();
+    }
+  }
+
+  @SuppressLint("MissingPermission")
+  private void toggleLocationUpdates() {
+    if (mGoogleMap.isMyLocationEnabled()) {
+      mClient.removeLocationUpdates(mLocationCallback);
+      mGoogleMap.setMyLocationEnabled(false);
+    } else {
+      mClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+      mGoogleMap.setMyLocationEnabled(true);
+    }
+  }
+
+  private boolean checkPermissions() {
+    int permissionState = ActivityCompat.checkSelfPermission(this,
+            ACCESS_COARSE_LOCATION);
+    return permissionState == PERMISSION_GRANTED;
+  }
+
+  private void requestPermissions() {
+    boolean shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(this,
+            ACCESS_COARSE_LOCATION);
+
+    if (shouldProvideRationale) {
+      Log.i(LOG_TAG, "requestPermissions: Displaying permission rationale to provide context.");
+
+      showSnackbar("Permission rationale.", getString(android.R.string.ok),
+              new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                  startLocationPermissionRequest();
+                }
+              });
+    } else {
+      Log.i(LOG_TAG, "requestPermissions: Requesting permission.");
+
+      startLocationPermissionRequest();
+    }
+  }
+
+  private void startLocationPermissionRequest() {
+    ActivityCompat.requestPermissions(this,
+            new String[]{ACCESS_COARSE_LOCATION},
+            LOCATION_PERMISSION_REQUEST_CODE);
+  }
+
+  private class PlacesTask extends AsyncTask<String, Integer, String> {
+    String data = null;
+
+    @Override
+    protected String doInBackground(String... strings) {
+      try {
+        data = downloadUrl(strings[0]);
+      } catch (Exception e) {
+        Log.e(LOG_TAG, "doInBackground: ", e);
+      }
+
+      return data;
     }
 
-    private class PlacesTask extends AsyncTask<String, Integer, String> {
-        String data = null;
+    @Override
+    protected void onPostExecute(String result) {
+      ParserTask parserTask = new ParserTask();
 
-        @Override
-        protected String doInBackground(String... strings) {
-            try {
-                data = downloadUrl(strings[0]);
-            } catch (Exception e) {
-                Log.e(LOG_TAG, "doInBackground: ", e);
-            }
+      parserTask.execute(result);
+    }
+  }
 
-            return data;
-        }
+  private class ParserTask extends AsyncTask<String, Integer, List<HashMap<String, String>>> {
+    JSONObject jObject;
 
-        @Override
-        protected void onPostExecute(String result) {
-            ParserTask parserTask = new ParserTask();
+    @Override
+    protected List<HashMap<String, String>> doInBackground(String... strings) {
+      List<HashMap<String, String>> places = null;
+      PlaceJSON placeJSON = new PlaceJSON();
 
-            parserTask.execute(result);
-        }
+      try {
+        jObject = new JSONObject(strings[0]);
+        places = placeJSON.parse(jObject);
+      } catch (JSONException e) {
+        e.printStackTrace();
+      }
+
+      return places;
     }
 
-    private class ParserTask extends AsyncTask<String, Integer, List<HashMap<String, String>>> {
-        JSONObject jObject;
+    @Override
+    protected void onPostExecute(List<HashMap<String, String>> list) {
+      if (!mFirstRun)
+        mGoogleMap.clear();
 
-        @Override
-        protected List<HashMap<String, String>> doInBackground(String... strings) {
-            List<HashMap<String, String>> places = null;
-            PlaceJSON placeJSON = new PlaceJSON();
+      mFirstRun = false;
 
-            try {
-                jObject = new JSONObject(strings[0]);
-                places = placeJSON.parse(jObject);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+      for (int x = 0; x < list.size(); x++) {
+        // Creating a marker
+        MarkerOptions options = new MarkerOptions();
 
-            return places;
-        }
+        // Getting a place from the places list
+        HashMap<String, String> hmPlace = list.get(x);
 
-        @Override
-        protected void onPostExecute(List<HashMap<String, String>> list) {
-            if (!mFirstRun)
-                mGoogleMap.clear();
+        // Getting LatLng
+        double lat = Double.parseDouble(hmPlace.get("lat"));
+        double lng = Double.parseDouble(hmPlace.get("lng"));
 
-            mFirstRun = false;
+        // Getting name
+        String name = hmPlace.get("place_name");
+        String vicinity = hmPlace.get("vicinity");
+        LatLng latLng = new LatLng(lat, lng);
 
-            for (int x = 0; x < list.size(); x++) {
-                // Creating a marker
-                MarkerOptions options = new MarkerOptions();
+        options.position(latLng);
+        options.title(name + " : " + vicinity);
+        options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
 
-                // Getting a place from the places list
-                HashMap<String, String> hmPlace = list.get(x);
-
-                // Getting LatLng
-                double lat = Double.parseDouble(hmPlace.get("lat"));
-                double lng = Double.parseDouble(hmPlace.get("lng"));
-
-                // Getting name
-                String name = hmPlace.get("place_name");
-                String vicinity = hmPlace.get("vicinity");
-                LatLng latLng = new LatLng(lat, lng);
-
-                options.position(latLng);
-                options.title(name + " : " + vicinity);
-                options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
-
-                mGoogleMap.addMarker(options);
-            }
-        }
+        mGoogleMap.addMarker(options);
+      }
     }
+  }
 }
