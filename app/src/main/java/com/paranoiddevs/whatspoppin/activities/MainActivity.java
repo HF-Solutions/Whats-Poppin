@@ -32,6 +32,7 @@ public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
     private static final String LOG_TAG = "MainActivity";
     private DrawerLayout mDrawer;
+    private NavigationView mNavView;
     private SupportMapFragment mMapFragment;
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -91,18 +92,16 @@ public class MainActivity extends BaseActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
+        switch (id) {
+            case R.id.nav_home:
+                mNavView.setCheckedItem(R.id.nav_home);
+                System.out.println("nav_home selected.");
+                break;
 
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+            case R.id.nav_list:
+                mNavView.setCheckedItem(R.id.nav_list);
+                System.out.println("nav_list selected.");
+                break;
         }
 
         mDrawer.closeDrawer(GravityCompat.START);
@@ -169,7 +168,8 @@ public class MainActivity extends BaseActivity
         mDrawer.addDrawerListener(toggle);
         toggle.syncState();
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        mNavView = findViewById(R.id.nav_view);
+        mNavView.setNavigationItemSelectedListener(this);
+        mNavView.setCheckedItem(R.id.nav_home);
     }
 }
