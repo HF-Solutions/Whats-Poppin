@@ -48,6 +48,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.paranoiddevs.whatspoppin.activities.MainActivity"/>
         </activity>
+
+        <activity
+            android:name=".activities.AboutActivity"
+            android:parentActivityName=".activities.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.paranoiddevs.whatspoppin.activities.MainActivity"/>
+        </activity>
     </application>
 
 </manifest>

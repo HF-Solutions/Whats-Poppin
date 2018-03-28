@@ -111,6 +111,10 @@ public class MainActivity extends BaseActivity
             case R.id.nav_feedback:
                 startActivity(new Intent(this, FeedbackActivity.class));
                 break;
+
+            case R.id.nav_about:
+                startActivity(new Intent(this, AboutActivity.class));
+                break;
         }
 
         mDrawer.closeDrawer(GravityCompat.START);

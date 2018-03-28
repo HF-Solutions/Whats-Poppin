@@ -3,7 +3,8 @@
       xmlns:tools="http://schemas.android.com/tools"
       tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
+    <group android:id="@+id/nav_fragments"
+        android:checkableBehavior="single">
         <item
             android:id="@+id/nav_home"
             android:icon="@drawable/ic_home"
@@ -14,17 +15,19 @@
             android:title="@string/nav_bar_locations_list"/>
     </group>
 
-    <item android:title="@string/nav_bar_title_secondary">
-        <menu>
-            <item
-                android:id="@+id/nav_settings"
-                android:icon="@drawable/ic_settings"
-                android:title="@string/nav_bar_settings"/>
-            <item
-                android:id="@+id/nav_feedback"
-                android:icon="@drawable/ic_error"
-                android:title="@string/nav_bar_report"/>
-        </menu>
-    </item>
+    <group android:id="@+id/nav_helpers">
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/nav_bar_settings"/>
+        <item
+            android:id="@+id/nav_feedback"
+            android:icon="@drawable/ic_error"
+            android:title="@string/nav_bar_report"/>
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_info_outline"
+            android:title="@string/nav_bar_about"/>
+    </group>
 
 </menu>

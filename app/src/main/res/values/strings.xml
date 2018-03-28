@@ -93,4 +93,9 @@
     <string name="pref_title_vibrate">Vibrate</string>
     <string name="edit_text_feedback_default">Describe your issue or share your idea</string>
     <string name="submit">Submit</string>
+    <string name="nav_bar_about">About</string>
+    <string name="about_header_text">About the App</string>
+    <string name="about_developers_text">From Paranoid Developers, Inc. ©, et al.</string>
+    <string name="about_version_name_default">0.0.0</string>
+    <string name="about_version_code_default">00000</string>
 </resources>
