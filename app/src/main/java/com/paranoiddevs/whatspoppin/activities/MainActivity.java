@@ -1,6 +1,7 @@
 package com.paranoiddevs.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -101,6 +102,11 @@ public class MainActivity extends BaseActivity
             case R.id.nav_list:
                 mNavView.setCheckedItem(R.id.nav_list);
                 System.out.println("nav_list selected.");
+                break;
+
+            case R.id.nav_settings:
+                Intent settings = new Intent(this, SettingsActivity.class);
+                startActivity(settings);
                 break;
         }
 
