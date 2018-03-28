@@ -1,6 +1,8 @@
 package com.paranoiddevs.whatspoppin.activities;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
@@ -37,7 +39,7 @@ public class FeedbackActivity extends AppCompatActivity {
                 emailIntent.setType("text/plain");
                 emailIntent.putExtra(Intent.EXTRA_EMAIL, "alcha@paranoiddevs.com");
                 emailIntent.putExtra(Intent.EXTRA_SUBJECT, "What's Poppin'? Feedback");
-                emailIntent.putExtra(Intent.EXTRA_TEXT, contentEditText.getText().toString());
+                emailIntent.putExtra(Intent.EXTRA_TEXT, getEmailContent(contentEditText));
 
                 try {
                     startActivity(Intent.createChooser(emailIntent, "Send email..."));
@@ -48,6 +50,27 @@ public class FeedbackActivity extends AppCompatActivity {
                 }
             }
         };
+    }
+
+    private String getEmailContent(EditText contentEditable) {
+        StringBuilder builder = new StringBuilder(contentEditable.getText().toString());
+        builder.append("\n\n");
+
+        try {
+            PackageManager manager = this.getPackageManager();
+            PackageInfo info = manager.getPackageInfo(this.getPackageName(), 0);
+            builder.append("App Version Information:\n");
+            builder.append("Package Name - ");
+            builder.append(info.packageName);
+            builder.append("\nVersion Code - ");
+            builder.append(info.versionCode);
+            builder.append("\nVersion Name - ");
+            builder.append(info.versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(LOG_TAG, "getEmailContent: manager.getPackageInfo failed.", e);
+        }
+
+        return builder.toString();
     }
 
     /**
