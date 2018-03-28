@@ -105,8 +105,11 @@ public class MainActivity extends BaseActivity
                 break;
 
             case R.id.nav_settings:
-                Intent settings = new Intent(this, SettingsActivity.class);
-                startActivity(settings);
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+
+            case R.id.nav_feedback:
+                startActivity(new Intent(this, FeedbackActivity.class));
                 break;
         }
 

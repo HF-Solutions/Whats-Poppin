@@ -91,4 +91,6 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
+    <string name="edit_text_feedback_default">Describe your issue or share your idea</string>
+    <string name="submit">Submit</string>
 </resources>
