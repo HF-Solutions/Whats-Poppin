@@ -1,4 +1,4 @@
-package com.paranoiddevs.whats_poppin;
+package com.paranoiddevs.whatspoppin;
 
 import org.junit.Test;
 

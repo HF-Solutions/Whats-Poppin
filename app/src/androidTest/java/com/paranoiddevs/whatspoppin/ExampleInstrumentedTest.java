@@ -1,4 +1,4 @@
-package com.paranoiddevs.whats_poppin;
+package com.paranoiddevs.whatspoppin;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.paranoiddevs.whats_poppin", appContext.getPackageName());
+        assertEquals("com.paranoiddevs.whatspoppin", appContext.getPackageName());
     }
 }
