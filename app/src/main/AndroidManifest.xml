@@ -16,7 +16,6 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key"/>
-
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version"/>
@@ -31,7 +30,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activities.SettingsActivity"
             android:label="@string/title_activity_settings"
@@ -40,7 +38,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.paranoiddevs.whatspoppin.activities.MainActivity"/>
         </activity>
-
         <activity
             android:name=".activities.FeedbackActivity"
             android:parentActivityName=".activities.MainActivity">
@@ -48,13 +45,14 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.paranoiddevs.whatspoppin.activities.MainActivity"/>
         </activity>
-
         <activity
             android:name=".activities.AboutActivity"
             android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.paranoiddevs.whatspoppin.activities.MainActivity"/>
+        </activity>
+        <activity android:name=".activities.NewEntryActivity">
         </activity>
     </application>
 

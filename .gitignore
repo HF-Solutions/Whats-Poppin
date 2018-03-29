@@ -45,3 +45,5 @@ captures/
 gradle\.properties
 
 app/debug/
+
+app/release/

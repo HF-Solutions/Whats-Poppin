@@ -98,4 +98,6 @@
     <string name="about_developers_text">From Paranoid Developers, Inc. ©, et al.</string>
     <string name="about_version_name_default">0.0.0</string>
     <string name="about_version_code_default">00000</string>
+    <string name="edit_text_location_desc_hint">Description (optional)</string>
+    <string name="edit_text_location_name_hint">Name of the Location</string>
 </resources>

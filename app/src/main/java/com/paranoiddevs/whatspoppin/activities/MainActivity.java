@@ -2,19 +2,19 @@ package com.paranoiddevs.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
+import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -28,6 +28,8 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
+
+import static com.paranoiddevs.whatspoppin.activities.WhatsPoppinBuilder.getFabListener;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
@@ -162,17 +164,15 @@ public class MainActivity extends BaseActivity
 
     private void setupFab() {
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        fab.setOnClickListener(getFabListener(this));
     }
 
     private void setupNavBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("");
+        TextView title = toolbar.findViewById(R.id.appbar_title);
+        title.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
+
         setSupportActionBar(toolbar);
 
         mDrawer = findViewById(R.id.drawer_layout);
