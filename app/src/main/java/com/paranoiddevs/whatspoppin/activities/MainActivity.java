@@ -2,6 +2,7 @@ package com.paranoiddevs.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -29,10 +31,10 @@ import com.google.android.gms.tasks.Task;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 
-import static com.paranoiddevs.whatspoppin.activities.WhatsPoppinBuilder.getFabListener;
+import java.io.ByteArrayOutputStream;
 
 public class MainActivity extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.SnapshotReadyCallback {
     private static final String LOG_TAG = "MainActivity";
     private DrawerLayout mDrawer;
     private NavigationView mNavView;
@@ -164,7 +166,12 @@ public class MainActivity extends BaseActivity
 
     private void setupFab() {
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(getFabListener(this));
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mMap.snapshot(MainActivity.this);
+            }
+        });
     }
 
     private void setupNavBar() {
@@ -184,5 +191,16 @@ public class MainActivity extends BaseActivity
         mNavView = findViewById(R.id.nav_view);
         mNavView.setNavigationItemSelectedListener(this);
         mNavView.setCheckedItem(R.id.nav_home);
+    }
+
+    @Override
+    public void onSnapshotReady(Bitmap bitmap) {
+        Intent tempActivity = new Intent(this, NewEntryActivity.class);
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+
+        bitmap.compress(Bitmap.CompressFormat.PNG, 50, bs);
+        tempActivity.putExtra("imageBitmap", bs.toByteArray());
+
+        startActivity(tempActivity);
     }
 }

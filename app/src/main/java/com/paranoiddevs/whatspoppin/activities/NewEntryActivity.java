@@ -1,10 +1,13 @@
 package com.paranoiddevs.whatspoppin.activities;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.paranoiddevs.whatspoppin.R;
@@ -23,7 +26,6 @@ public class NewEntryActivity extends AppCompatActivity {
     }
 
     private void setupButton() {
-        mSubmitBtn = findViewById(R.id.btn_submit_entry);
         mSubmitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -42,5 +44,14 @@ public class NewEntryActivity extends AppCompatActivity {
     private void setupViews() {
         mLocationName = findViewById(R.id.edit_text_location_name);
         mLocationDesc = findViewById(R.id.edit_text_location_desc);
+        mSubmitBtn = findViewById(R.id.btn_submit_entry);
+
+        ImageView imageView = findViewById(R.id.map_image);
+        imageView.setImageBitmap(getScreenshot());
+    }
+
+    private Bitmap getScreenshot() {
+        byte[] temp = getIntent().getByteArrayExtra("imageBitmap");
+        return BitmapFactory.decodeByteArray(temp, 0, temp.length);
     }
 }
