@@ -27,4 +27,10 @@
         android:hint="@string/edit_text_location_desc_hint"
         android:inputType="textCapSentences"/>
 
+    <ImageView
+        android:id="@+id/map_screenshot"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/map_screenshot_desc"/>
+
 </LinearLayout>

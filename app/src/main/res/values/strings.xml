@@ -101,4 +101,5 @@
     <string name="edit_text_location_desc_hint">Description (optional)</string>
     <string name="edit_text_location_name_hint">Name of the Location</string>
     <string name="image_data_info">(Image is never sent outside of your device.)</string>
+    <string name="map_screenshot_desc">A screenshot of the location to store.</string>
 </resources>

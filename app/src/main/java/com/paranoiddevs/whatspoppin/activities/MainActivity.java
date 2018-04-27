@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
@@ -16,11 +17,11 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -179,39 +180,50 @@ public class MainActivity extends BaseActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LayoutInflater li = LayoutInflater.from(mContext);
-                View promptsView = li.inflate(R.layout.new_entry, null);
+                LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
+                    @Override
+                    public void onFinish() {
+                        Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
+                        mMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+                            @Override
+                            public void onSnapshotReady(Bitmap bitmap) {
+                                View promptsView = getLayoutInflater().inflate(R.layout.new_entry, null);
 
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
+                                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
+                                alertDialogBuilder.setView(promptsView);
 
-                // set new_entry.xml to AlertDialog builder
-                alertDialogBuilder.setView(promptsView);
+                                final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
+                                final EditText locationDesc = promptsView.findViewById(R.id.edit_text_location_desc);
+                                final ImageView screenshotImage = promptsView.findViewById(R.id.map_screenshot);
+                                screenshotImage.setImageBitmap(bitmap);
 
-                final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
-                final EditText locationDesc = promptsView.findViewById(R.id.edit_text_location_desc);
+                                alertDialogBuilder.setCancelable(false)
+                                        .setPositiveButton("OK", null)
+                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                            public void onClick(DialogInterface dialog, int id) {
+                                                dialog.cancel();
+                                            }
+                                        });
 
-                // set dialog message
-                alertDialogBuilder
-                        .setCancelable(false)
-                        .setPositiveButton("OK", null)
-                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                dialog.cancel();
+                                final AlertDialog alertDialog = alertDialogBuilder.create();
+                                alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                                    @Override
+                                    public void onShow(DialogInterface dialogInterface) {
+                                        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                                        button.setOnClickListener(getDialogOKListener(locationName, locationDesc, dialogInterface));
+                                    }
+                                });
+
+                                alertDialog.show();
                             }
                         });
+                    }
 
-                // create alert dialog
-                final AlertDialog alertDialog = alertDialogBuilder.create();
-                alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
                     @Override
-                    public void onShow(DialogInterface dialogInterface) {
-                        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                        button.setOnClickListener(getDialogOKListener(locationName, locationDesc, dialogInterface));
+                    public void onCancel() {
                     }
                 });
-
-                // show it
-                alertDialog.show();
             }
         });
     }
