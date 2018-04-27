@@ -19,6 +19,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,10 +38,10 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.paranoiddevs.whatspoppin.R;
+import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 
-import java.util.HashMap;
-import java.util.Map;
+import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
@@ -48,10 +49,9 @@ public class MainActivity extends BaseActivity
     private final Context mContext = this;
     private DrawerLayout mDrawer;
     private NavigationView mNavView;
-    private SupportMapFragment mMapFragment;
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationProviderClient;
-    private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
+    private final LatLng mDefaultLocation = new LatLng(-48.876667, -123.39333); // Point Nemo
     private static final int DEFAULT_ZOOM = 15;
     private FirebaseFirestore mDB;
 
@@ -64,13 +64,12 @@ public class MainActivity extends BaseActivity
         setContentView(R.layout.activity_main);
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        mMapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mMapFragment.getMapAsync(this);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+        mDB = FirebaseFirestore.getInstance();
 
         setupNavBar();
         setupFab();
-
-        mDB = FirebaseFirestore.getInstance();
     }
 
     @Override
@@ -103,9 +102,8 @@ public class MainActivity extends BaseActivity
         } else requestPermissions();
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
@@ -182,11 +180,11 @@ public class MainActivity extends BaseActivity
             @Override
             public void onClick(View view) {
                 LayoutInflater li = LayoutInflater.from(mContext);
-                View promptsView = li.inflate(R.layout.activity_new_entry, null);
+                View promptsView = li.inflate(R.layout.new_entry, null);
 
                 AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
 
-                // set prompts.xml to alertdialog builder
+                // set new_entry.xml to AlertDialog builder
                 alertDialogBuilder.setView(promptsView);
 
                 final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
@@ -195,45 +193,56 @@ public class MainActivity extends BaseActivity
                 // set dialog message
                 alertDialogBuilder
                         .setCancelable(false)
-                        .setPositiveButton("OK",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        // get user input and set it to result
-                                        // edit text
-                                        if (locationName.getText().length() == 0) {
-                                            Toast.makeText(getBaseContext(), "You must provide a location name.", Toast.LENGTH_SHORT).show();
-                                        } else {
-                                            LatLng latLng = getLatLng();
-                                            Map<String, Object> data = new HashMap<>();
-                                            data.put("name", locationName.getText().toString());
-                                            data.put("desc", locationDesc.getText().toString());
-                                            data.put("lat", latLng.latitude);
-                                            data.put("lng", latLng.longitude);
-
-                                            mDB.collection("data").add(data).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                                                @Override
-                                                public void onSuccess(DocumentReference documentReference) {
-                                                    Log.d(LOG_TAG, "onSuccess: Snapshot added with id: " + documentReference.getId());
-                                                    Toast.makeText(getBaseContext(), "Congrats, you've added your location to the database!", Toast.LENGTH_LONG).show();
-                                                }
-                                            });
-                                        }
-                                    }
-                                })
-                        .setNegativeButton("Cancel",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
-                                        dialog.cancel();
-                                    }
-                                });
+                        .setPositiveButton("OK", null)
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        });
 
                 // create alert dialog
-                AlertDialog alertDialog = alertDialogBuilder.create();
+                final AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                    @Override
+                    public void onShow(DialogInterface dialogInterface) {
+                        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                        button.setOnClickListener(getDialogOKListener(locationName, locationDesc, dialogInterface));
+                    }
+                });
 
                 // show it
                 alertDialog.show();
             }
         });
+    }
+
+    private View.OnClickListener getDialogOKListener(final EditText locationName, final EditText locationDesc, final DialogInterface dialogInterface) {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // get user input and set it to result
+                // edit text
+                if (getTextContent(locationName).length() == 0) {
+                    Toast.makeText(getBaseContext(), "You must provide a location name.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Place place = Place.buildNewPlace(
+                            getTextContent(locationName),
+                            getTextContent(locationDesc),
+                            mLastKnownLocation.getLatitude(),
+                            mLastKnownLocation.getLongitude());
+
+                    mDB.collection(getCollectionName(place.getLat(), place.getLng())).add(place.convertToMap())
+                            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                @Override
+                                public void onSuccess(DocumentReference documentReference) {
+                                    Toast.makeText(getBaseContext(), "Congrats, you've added your location to the database!", Toast.LENGTH_LONG).show();
+                                }
+                            });
+
+                    dialogInterface.dismiss();
+                }
+            }
+        };
     }
 
     private void setupNavBar() {
@@ -255,7 +264,7 @@ public class MainActivity extends BaseActivity
         mNavView.setCheckedItem(R.id.nav_home);
     }
 
-    private LatLng getLatLng() {
-        return new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
+    private String getTextContent(EditText editText) {
+        return editText.getText().toString().trim();
     }
 }
