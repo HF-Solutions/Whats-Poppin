@@ -1,8 +1,9 @@
 package com.paranoiddevs.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Bundle;
@@ -12,11 +13,15 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -27,15 +32,20 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 
-import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends BaseActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.SnapshotReadyCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
     private static final String LOG_TAG = "MainActivity";
+    private final Context mContext = this;
     private DrawerLayout mDrawer;
     private NavigationView mNavView;
     private SupportMapFragment mMapFragment;
@@ -43,9 +53,9 @@ public class MainActivity extends BaseActivity
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private final LatLng mDefaultLocation = new LatLng(-33.8523341, 151.2106085);
     private static final int DEFAULT_ZOOM = 15;
+    private FirebaseFirestore mDB;
 
-    // The geographical location where the device is currently located. That is, the last-known
-    // location retrieved by the Fused Location Provider.
+    // The geographical location where the device is currently located.
     private Location mLastKnownLocation;
 
     @Override
@@ -59,6 +69,8 @@ public class MainActivity extends BaseActivity
 
         setupNavBar();
         setupFab();
+
+        mDB = FirebaseFirestore.getInstance();
     }
 
     @Override
@@ -169,7 +181,57 @@ public class MainActivity extends BaseActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mMap.snapshot(MainActivity.this);
+                LayoutInflater li = LayoutInflater.from(mContext);
+                View promptsView = li.inflate(R.layout.activity_new_entry, null);
+
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
+
+                // set prompts.xml to alertdialog builder
+                alertDialogBuilder.setView(promptsView);
+
+                final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
+                final EditText locationDesc = promptsView.findViewById(R.id.edit_text_location_desc);
+
+                // set dialog message
+                alertDialogBuilder
+                        .setCancelable(false)
+                        .setPositiveButton("OK",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        // get user input and set it to result
+                                        // edit text
+                                        if (locationName.getText().length() == 0) {
+                                            Toast.makeText(getBaseContext(), "You must provide a location name.", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            LatLng latLng = getLatLng();
+                                            Map<String, Object> data = new HashMap<>();
+                                            data.put("name", locationName.getText().toString());
+                                            data.put("desc", locationDesc.getText().toString());
+                                            data.put("lat", latLng.latitude);
+                                            data.put("lng", latLng.longitude);
+
+                                            mDB.collection("data").add(data).addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                                @Override
+                                                public void onSuccess(DocumentReference documentReference) {
+                                                    Log.d(LOG_TAG, "onSuccess: Snapshot added with id: " + documentReference.getId());
+                                                    Toast.makeText(getBaseContext(), "Congrats, you've added your location to the database!", Toast.LENGTH_LONG).show();
+                                                }
+                                            });
+                                        }
+                                    }
+                                })
+                        .setNegativeButton("Cancel",
+                                new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.cancel();
+                                    }
+                                });
+
+                // create alert dialog
+                AlertDialog alertDialog = alertDialogBuilder.create();
+
+                // show it
+                alertDialog.show();
             }
         });
     }
@@ -193,14 +255,7 @@ public class MainActivity extends BaseActivity
         mNavView.setCheckedItem(R.id.nav_home);
     }
 
-    @Override
-    public void onSnapshotReady(Bitmap bitmap) {
-        Intent tempActivity = new Intent(this, NewEntryActivity.class);
-        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-
-        bitmap.compress(Bitmap.CompressFormat.PNG, 50, bs);
-        tempActivity.putExtra("imageBitmap", bs.toByteArray());
-
-        startActivity(tempActivity);
+    private LatLng getLatLng() {
+        return new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
     }
 }
