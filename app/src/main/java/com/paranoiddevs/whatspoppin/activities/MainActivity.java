@@ -74,11 +74,9 @@ public class MainActivity extends BaseActivity
 
     @Override
     public void onBackPressed() {
-        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+        if (mDrawer.isDrawerOpen(GravityCompat.START))
             mDrawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+        else super.onBackPressed();
     }
 
     @Override
@@ -316,12 +314,8 @@ public class MainActivity extends BaseActivity
      * action listeners.
      */
     private void setupNavBar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("");
-        TextView title = toolbar.findViewById(R.id.appbar_title);
-        title.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
-
-        setSupportActionBar(toolbar);
+        Toolbar toolbar = buildToolbar();
+        setSupportActionBar(buildToolbar());
 
         mDrawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -332,6 +326,22 @@ public class MainActivity extends BaseActivity
         mNavView = findViewById(R.id.nav_view);
         mNavView.setNavigationItemSelectedListener(this);
         mNavView.setCheckedItem(R.id.nav_home);
+    }
+
+    /**
+     * Builds and returns the {@link Toolbar} used by the {@link MainActivity}. Mostly just sets
+     * the font to the custom Lobster font requested by the client.
+     *
+     * @return {@link Toolbar}
+     */
+    private Toolbar buildToolbar() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("");
+
+        TextView title = toolbar.findViewById(R.id.appbar_title);
+        title.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
+
+        return toolbar;
     }
 
     /**
