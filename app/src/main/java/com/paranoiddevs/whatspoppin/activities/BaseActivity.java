@@ -25,6 +25,12 @@ public class BaseActivity extends AppCompatActivity {
      */
     public static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
+    /**
+     * Checks to see if the user has granted the app access to the ACCESS_COARSE_LOCATION permission
+     * and returns true or false.
+     *
+     * @return True/False - The user has granted access to COARSE_LOCATION info
+     */
     protected boolean checkPermissions() {
         int permissionState = ActivityCompat.checkSelfPermission(this,
                 ACCESS_COARSE_LOCATION);

@@ -40,6 +40,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
+import com.paranoiddevs.whatspoppin.util.Constants;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 
 import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
@@ -51,12 +52,14 @@ public class MainActivity extends BaseActivity
     private DrawerLayout mDrawer;
     private NavigationView mNavView;
     private GoogleMap mMap;
+
+    /** {@link FusedLocationProviderClient} used to retrieve the users location */
     private FusedLocationProviderClient mFusedLocationProviderClient;
-    private final LatLng mDefaultLocation = new LatLng(-48.876667, -123.39333); // Point Nemo
-    private static final int DEFAULT_ZOOM = 15;
+
+    /** The FirebaseFirestore connection to our pin data */
     private FirebaseFirestore mDB;
 
-    // The geographical location where the device is currently located.
+    /** The geographical location where the device is currently located. */
     private Location mLastKnownLocation;
 
     @Override
@@ -64,11 +67,7 @@ public class MainActivity extends BaseActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-        mDB = FirebaseFirestore.getInstance();
-
+        setupBaseVars();
         setupNavBar();
         setupFab();
     }
@@ -136,6 +135,9 @@ public class MainActivity extends BaseActivity
         return true;
     }
 
+    /**
+     * Updates the map based on the current permission settings.
+     */
     @SuppressLint("MissingPermission")
     private void updateUI() {
         if (mMap == null) return;
@@ -150,74 +152,74 @@ public class MainActivity extends BaseActivity
         }
     }
 
+    /**
+     * Gets the current location using a {@link FusedLocationProviderClient} and then stores the
+     * value as the {@link #mLastKnownLocation} variable if it was successfully retrieved. If no
+     * location was retrieved, the camera is moved to a {@link Constants#DEFAULT_LOCATION} which is
+     * <a href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>.
+     */
+    @SuppressLint("MissingPermission")
     private void getDeviceLocation() {
-        try {
-            if (checkPermissions()) {
-                Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
-                locationResult.addOnCompleteListener(this, new OnCompleteListener<Location>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Location> task) {
-                        if (task.isSuccessful()) {
-                            mLastKnownLocation = task.getResult();
-                            LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, DEFAULT_ZOOM));
-                            mMap.addMarker(new MarkerOptions().title("Current Location").position(currLatLng));
-                        } else {
-                            Log.d(LOG_TAG, "onComplete: Current location is null.");
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
-                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                        }
-                    }
-                });
-            }
-        } catch (SecurityException e) {
-            Log.e("Exception: %s", e.getMessage());
+        if (checkPermissions()) {
+            Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
+            locationResult.addOnCompleteListener(this, getOnCompleteListener());
         }
     }
 
+    /**
+     * Builds and returns the {@link OnCompleteListener} used when retrieving the users location. If
+     * the task is successful, store the user location as {@link #mLastKnownLocation} place a marker
+     * and move the camera there. If the task is <i>not</i> successful, move the camera to our
+     * {@link Constants#DEFAULT_LOCATION}.
+     *
+     * @return {@link OnCompleteListener}
+     */
+    private OnCompleteListener<Location> getOnCompleteListener() {
+        return new OnCompleteListener<Location>() {
+            @Override
+            public void onComplete(@NonNull Task<Location> task) {
+                if (task.isSuccessful()) {
+                    mLastKnownLocation = task.getResult();
+                    LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, Constants.DEFAULT_ZOOM));
+                    mMap.addMarker(new MarkerOptions().title("Current Location").position(currLatLng));
+                } else {
+                    Log.d(LOG_TAG, "onComplete: Current location is null.");
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
+                    mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                }
+            }
+        };
+    }
+
+    /**
+     * Setup the basic variables used by the {@link MainActivity}, such as the
+     * {@link #mFusedLocationProviderClient}, {@link #mDB}, and the
+     * {@link SupportMapFragment}.
+     */
+    private void setupBaseVars() {
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+        mDB = FirebaseFirestore.getInstance();
+    }
+
+    /**
+     * Setup the {@link FloatingActionButton} by adding the
+     * {@link android.view.View.OnClickListener} responsible for adding new locations. If the FAB is
+     * clicked, an AlertDialog appears asking the user for information regarding the location.
+     */
     private void setupFab() {
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
                     @Override
                     public void onFinish() {
                         Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
-                        mMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
-                            @Override
-                            public void onSnapshotReady(Bitmap bitmap) {
-                                View promptsView = getLayoutInflater().inflate(R.layout.new_entry, null);
-
-                                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
-                                alertDialogBuilder.setView(promptsView);
-
-                                final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
-                                final EditText locationDesc = promptsView.findViewById(R.id.edit_text_location_desc);
-                                final ImageView screenshotImage = promptsView.findViewById(R.id.map_screenshot);
-                                screenshotImage.setImageBitmap(bitmap);
-
-                                alertDialogBuilder.setCancelable(false)
-                                        .setPositiveButton("OK", null)
-                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int id) {
-                                                dialog.cancel();
-                                            }
-                                        });
-
-                                final AlertDialog alertDialog = alertDialogBuilder.create();
-                                alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                                    @Override
-                                    public void onShow(DialogInterface dialogInterface) {
-                                        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
-                                        button.setOnClickListener(getDialogOKListener(locationName, locationDesc, dialogInterface));
-                                    }
-                                });
-
-                                alertDialog.show();
-                            }
-                        });
+                        showNewLocationDialog();
                     }
 
                     @Override
@@ -228,6 +230,58 @@ public class MainActivity extends BaseActivity
         });
     }
 
+    /**
+     * Takes a snapshot of the current location displayed on the map and displays an AlertDialog
+     * to accept input about the location in order to store it in our DB.
+     *
+     * TODO: Use a custom dialog instead of the standard AlertDialog.
+     */
+    private void showNewLocationDialog() {
+        mMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+            @Override
+            public void onSnapshotReady(Bitmap bitmap) {
+                View promptsView = getLayoutInflater().inflate(R.layout.new_entry, null);
+
+                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(mContext);
+                alertDialogBuilder.setView(promptsView);
+
+                final EditText locationName = promptsView.findViewById(R.id.edit_text_location_name);
+                final EditText locationDesc = promptsView.findViewById(R.id.edit_text_location_desc);
+                final ImageView screenshotImage = promptsView.findViewById(R.id.map_screenshot);
+                screenshotImage.setImageBitmap(bitmap);
+
+                alertDialogBuilder.setCancelable(false)
+                        .setPositiveButton("OK", null)
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
+                        });
+
+                final AlertDialog alertDialog = alertDialogBuilder.create();
+                alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                    @Override
+                    public void onShow(DialogInterface dialogInterface) {
+                        Button button = alertDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+                        button.setOnClickListener(getDialogOKListener(locationName, locationDesc, dialogInterface));
+                    }
+                });
+
+                alertDialog.show();
+            }
+        });
+    }
+
+    /**
+     * Builds and returns the {@link android.view.View.OnClickListener} used by the AlertDialog for
+     * information about a new location.
+     *
+     * @param locationName    The {@link EditText} containing the users input for location name
+     * @param locationDesc    The {@link EditText} containing the users input for location desc
+     * @param dialogInterface The {@link DialogInterface} for the AlertDialog in order to dismiss it
+     *
+     * @return {@link android.view.View.OnClickListener}
+     */
     private View.OnClickListener getDialogOKListener(final EditText locationName, final EditText locationDesc, final DialogInterface dialogInterface) {
         return new View.OnClickListener() {
             @Override
@@ -257,6 +311,10 @@ public class MainActivity extends BaseActivity
         };
     }
 
+    /**
+     * Setup the {@link Toolbar} and {@link DrawerLayout} by setting the custom font and adding
+     * action listeners.
+     */
     private void setupNavBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("");
@@ -276,6 +334,14 @@ public class MainActivity extends BaseActivity
         mNavView.setCheckedItem(R.id.nav_home);
     }
 
+    /**
+     * Retrieves the text content from the provided {@link EditText} view and trims any excess
+     * whitespace.
+     *
+     * @param editText The {@link EditText} you wish to retrieve the content from
+     *
+     * @return A {@link String} containing the content of the provided {@link EditText}
+     */
     private String getTextContent(EditText editText) {
         return editText.getText().toString().trim();
     }
