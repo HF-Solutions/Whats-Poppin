@@ -1,12 +1,16 @@
 package com.paranoiddevs.whatspoppin.activities;
 
 import android.content.DialogInterface;
+import android.location.Location;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -80,5 +84,29 @@ public class BaseActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(this,
                 new String[]{ACCESS_COARSE_LOCATION},
                 LOCATION_PERMISSION_REQUEST_CODE);
+    }
+
+    /**
+     * Converts the provided {@link Location} object to a {@link LatLng} for use with the
+     * {@link com.google.android.gms.maps.GoogleMap} and it's markers.
+     *
+     * @param location A {@link Location} object of the users current location
+     *
+     * @return A {@link LatLng} object of the users current location.
+     */
+    protected LatLng getCurrLatLng(Location location) {
+        return new LatLng(location.getLatitude(), location.getLongitude());
+    }
+
+    /**
+     * Retrieves the text content from the provided {@link EditText} view and trims any excess
+     * whitespace.
+     *
+     * @param editText The {@link EditText} you wish to retrieve the content from
+     *
+     * @return A {@link String} containing the content of the provided {@link EditText}
+     */
+    protected String getTextContent(EditText editText) {
+        return editText.getText().toString().trim();
     }
 }

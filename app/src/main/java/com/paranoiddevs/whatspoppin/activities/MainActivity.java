@@ -102,7 +102,6 @@ public class MainActivity extends BaseActivity
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         switch (id) {
@@ -178,9 +177,8 @@ public class MainActivity extends BaseActivity
             public void onComplete(@NonNull Task<Location> task) {
                 if (task.isSuccessful()) {
                     mLastKnownLocation = task.getResult();
-                    LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, Constants.DEFAULT_ZOOM));
-                    mMap.addMarker(new MarkerOptions().title("Current Location").position(currLatLng));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getCurrLatLng(mLastKnownLocation), Constants.DEFAULT_ZOOM));
+                    mMap.addMarker(new MarkerOptions().title("Current Location").position(getCurrLatLng(mLastKnownLocation)));
                 } else {
                     Log.d(LOG_TAG, "onComplete: Current location is null.");
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
@@ -209,23 +207,39 @@ public class MainActivity extends BaseActivity
      */
     private void setupFab() {
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        fab.setOnClickListener(getFabClickListener());
+    }
+
+    /**
+     * Builds and returns an {@link android.view.View.OnClickListener} that's used by the
+     * {@link FloatingActionButton} on the {@link MainActivity}. When a user clicks the FAB, the
+     * camera is animated to the users current location, a screenshot is taken, and the new location
+     * AlertDialog is displayed.
+     *
+     * @return {@link android.view.View.OnClickListener} for the FAB
+     */
+    private View.OnClickListener getFabClickListener() {
+        return new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
                     @Override
                     public void onFinish() {
+                        // Display toast so the user knows something is happening
                         Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
+
+                        // Display the AlertDialog for a new location and associated info
                         showNewLocationDialog();
                     }
 
                     @Override
                     public void onCancel() {
+                        // Do nothing
                     }
                 });
             }
-        });
+        };
     }
 
     /**
@@ -342,17 +356,5 @@ public class MainActivity extends BaseActivity
         title.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
 
         return toolbar;
-    }
-
-    /**
-     * Retrieves the text content from the provided {@link EditText} view and trims any excess
-     * whitespace.
-     *
-     * @param editText The {@link EditText} you wish to retrieve the content from
-     *
-     * @return A {@link String} containing the content of the provided {@link EditText}
-     */
-    private String getTextContent(EditText editText) {
-        return editText.getText().toString().trim();
     }
 }
