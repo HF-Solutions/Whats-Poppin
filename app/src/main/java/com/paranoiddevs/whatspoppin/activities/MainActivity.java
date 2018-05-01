@@ -59,8 +59,8 @@ public class MainActivity extends BaseActivity
     /** The FirebaseFirestore connection to our pin data */
     private FirebaseFirestore mDB;
 
-    /** The geographical location where the device is currently located. */
-    private Location mLastKnownLocation;
+    /** The current {@link LatLng} for where the device is currently located. */
+    private LatLng mCurrLatLng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -176,9 +176,10 @@ public class MainActivity extends BaseActivity
             @Override
             public void onComplete(@NonNull Task<Location> task) {
                 if (task.isSuccessful()) {
-                    mLastKnownLocation = task.getResult();
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(getCurrLatLng(mLastKnownLocation), Constants.DEFAULT_ZOOM));
-                    mMap.addMarker(new MarkerOptions().title("Current Location").position(getCurrLatLng(mLastKnownLocation)));
+                    Location location = task.getResult();
+                    mCurrLatLng = getCurrLatLng(task.getResult());
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM));
+                    mMap.addMarker(new MarkerOptions().title("Current Location").position(mCurrLatLng));
                 } else {
                     Log.d(LOG_TAG, "onComplete: Current location is null.");
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
@@ -189,9 +190,8 @@ public class MainActivity extends BaseActivity
     }
 
     /**
-     * Setup the basic variables used by the {@link MainActivity}, such as the
-     * {@link #mFusedLocationProviderClient}, {@link #mDB}, and the
-     * {@link SupportMapFragment}.
+     * Setup the basic variables used by the {@link MainActivity}, such as the {@link
+     * #mFusedLocationProviderClient}, {@link #mDB}, and the {@link SupportMapFragment}.
      */
     private void setupBaseVars() {
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
@@ -201,9 +201,9 @@ public class MainActivity extends BaseActivity
     }
 
     /**
-     * Setup the {@link FloatingActionButton} by adding the
-     * {@link android.view.View.OnClickListener} responsible for adding new locations. If the FAB is
-     * clicked, an AlertDialog appears asking the user for information regarding the location.
+     * Setup the {@link FloatingActionButton} by adding the {@link android.view.View.OnClickListener}
+     * responsible for adding new locations. If the FAB is clicked, an AlertDialog appears asking
+     * the user for information regarding the location.
      */
     private void setupFab() {
         FloatingActionButton fab = findViewById(R.id.fab);
@@ -211,9 +211,9 @@ public class MainActivity extends BaseActivity
     }
 
     /**
-     * Builds and returns an {@link android.view.View.OnClickListener} that's used by the
-     * {@link FloatingActionButton} on the {@link MainActivity}. When a user clicks the FAB, the
-     * camera is animated to the users current location, a screenshot is taken, and the new location
+     * Builds and returns an {@link android.view.View.OnClickListener} that's used by the {@link
+     * FloatingActionButton} on the {@link MainActivity}. When a user clicks the FAB, the camera is
+     * animated to the users current location, a screenshot is taken, and the new location
      * AlertDialog is displayed.
      *
      * @return {@link android.view.View.OnClickListener} for the FAB
@@ -222,8 +222,7 @@ public class MainActivity extends BaseActivity
         return new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LatLng currLatLng = new LatLng(mLastKnownLocation.getLatitude(), mLastKnownLocation.getLongitude());
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
                     @Override
                     public void onFinish() {
                         // Display toast so the user knows something is happening
@@ -243,8 +242,8 @@ public class MainActivity extends BaseActivity
     }
 
     /**
-     * Takes a snapshot of the current location displayed on the map and displays an AlertDialog
-     * to accept input about the location in order to store it in our DB.
+     * Takes a snapshot of the current location displayed on the map and displays an AlertDialog to
+     * accept input about the location in order to store it in our DB.
      *
      * TODO: Use a custom dialog instead of the standard AlertDialog.
      */
@@ -290,7 +289,8 @@ public class MainActivity extends BaseActivity
      *
      * @param locationName    The {@link EditText} containing the users input for location name
      * @param locationDesc    The {@link EditText} containing the users input for location desc
-     * @param dialogInterface The {@link DialogInterface} for the AlertDialog in order to dismiss it
+     * @param dialogInterface The {@link DialogInterface} for the AlertDialog in order to dismiss
+     *                        it
      *
      * @return {@link android.view.View.OnClickListener}
      */
@@ -298,16 +298,12 @@ public class MainActivity extends BaseActivity
         return new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // get user input and set it to result
-                // edit text
                 if (getTextContent(locationName).length() == 0) {
                     Toast.makeText(getBaseContext(), "You must provide a location name.", Toast.LENGTH_SHORT).show();
                 } else {
                     Place place = Place.buildNewPlace(
-                            getTextContent(locationName),
-                            getTextContent(locationDesc),
-                            mLastKnownLocation.getLatitude(),
-                            mLastKnownLocation.getLongitude());
+                            getTextContent(locationName), getTextContent(locationDesc),
+                            mCurrLatLng.latitude, mCurrLatLng.longitude);
 
                     mDB.collection(getCollectionName(place.getLat(), place.getLng())).add(place.convertToMap())
                             .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -343,8 +339,8 @@ public class MainActivity extends BaseActivity
     }
 
     /**
-     * Builds and returns the {@link Toolbar} used by the {@link MainActivity}. Mostly just sets
-     * the font to the custom Lobster font requested by the client.
+     * Builds and returns the {@link Toolbar} used by the {@link MainActivity}. Mostly just sets the
+     * font to the custom Lobster font requested by the client.
      *
      * @return {@link Toolbar}
      */

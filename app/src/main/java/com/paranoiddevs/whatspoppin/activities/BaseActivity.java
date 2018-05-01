@@ -20,14 +20,13 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
  */
 
 public class BaseActivity extends AppCompatActivity {
-    private static final String LOG_TAG = BaseActivity.class.getSimpleName();
-
     /**
      * Request code for location permission request.
      *
      * @see #onRequestPermissionsResult(int, String[], int[])
      */
     public static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private static final String LOG_TAG = BaseActivity.class.getSimpleName();
 
     /**
      * Checks to see if the user has granted the app access to the ACCESS_COARSE_LOCATION permission
@@ -87,8 +86,8 @@ public class BaseActivity extends AppCompatActivity {
     }
 
     /**
-     * Converts the provided {@link Location} object to a {@link LatLng} for use with the
-     * {@link com.google.android.gms.maps.GoogleMap} and it's markers.
+     * Converts the provided {@link Location} object to a {@link LatLng} for use with the {@link
+     * com.google.android.gms.maps.GoogleMap} and it's markers.
      *
      * @param location A {@link Location} object of the users current location
      *

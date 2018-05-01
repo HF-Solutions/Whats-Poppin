@@ -3,9 +3,8 @@ package com.paranoiddevs.whatspoppin.util;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
- * <p>Created by Alcha on Apr 27, 2018 @ 02:53.</p>
- * Contains methods meant to aid in working with the
- * {@link com.google.firebase.firestore.FirebaseFirestore} that stores all of our pin data.
+ * <p>Created by Alcha on Apr 27, 2018 @ 02:53.</p> Contains methods meant to aid in working with
+ * the {@link com.google.firebase.firestore.FirebaseFirestore} that stores all of our pin data.
  */
 public class DBHelper {
     /**
@@ -35,7 +34,8 @@ public class DBHelper {
     }
 
     /**
-     * Convert the given coordinates to a {@link String} and strips everything following the period.
+     * Convert the given coordinates to a {@link String} and strips everything following the
+     * period.
      *
      * @param input {@link Double} The coord to convert to a {@link String}
      *

@@ -6,11 +6,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * <p>Created by Alcha on Apr 02, 2018 @ 05:51.</p>
- * Used to help with storing the proper information for a place between platforms. There is no
- * public constructor or setter methods, you must use the static factory method
- * {@link #buildNewPlace(String, String, double, double)} which will generate a {@link Place} object
- * for you and return it for use.
+ * <p>Created by Alcha on Apr 02, 2018 @ 05:51.</p> Used to help with storing the proper information
+ * for a place between platforms. There is no public constructor or setter methods, you must use the
+ * static factory method {@link #buildNewPlace(String, String, double, double)} which will generate
+ * a {@link Place} object for you and return it for use.
  */
 
 public class Place {
@@ -20,11 +19,6 @@ public class Place {
     private double mLng;
 
     private Place() {
-    }
-
-    @Override
-    public String toString() {
-        return mName + " - " + mDesc + " @ (" + mLat + ", " + mLng + ")";
     }
 
     /**
@@ -69,6 +63,10 @@ public class Place {
         return place;
     }
 
+    @Override
+    public String toString() {
+        return mName + " - " + mDesc + " @ (" + mLat + ", " + mLng + ")";
+    }
 
     /**
      * Converts the currently generated Place to a {@literal Map<String, Object>} with the stored

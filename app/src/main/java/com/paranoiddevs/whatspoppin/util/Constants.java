@@ -3,8 +3,8 @@ package com.paranoiddevs.whatspoppin.util;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
- * <p>Created by Alcha on Apr 26, 2018 @ 22:03.</p>
- * Contains various constants used throughout the app.
+ * <p>Created by Alcha on Apr 26, 2018 @ 22:03.</p> Contains various constants used throughout the
+ * app.
  */
 public class Constants {
     // Constants used by the {@link com.paranoiddevs.whatspoppin.models.Place} model.
@@ -24,8 +24,8 @@ public class Constants {
     public static final int DEFAULT_ZOOM = 15;
 
     /**
-     * Represents the default location when one cannot be found. Resolves to
-     * <a href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>
+     * Represents the default location when one cannot be found. Resolves to <a
+     * href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>
      */
     public static final LatLng DEFAULT_LOCATION = new LatLng(-48.876667, -123.39333);
 }
