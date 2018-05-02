@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "109899503624",
+    "firebase_url": "https://whats-poppin-977d7.firebaseio.com",
+    "project_id": "whats-poppin-977d7",
+    "storage_bucket": "whats-poppin-977d7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109899503624:android:e2a649ba378065e7",
+        "android_client_info": {
+          "package_name": "com.paranoiddevs.whatspoppin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109899503624-du8l66bm9c3oa5ub4to4rtknqbmgmn3o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.paranoiddevs.whatspoppin",
+            "certificate_hash": "9440d76bca2269c8334594f8a58e1a102eedf0e0"
+          }
+        },
+        {
+          "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCE702t2e9AMwDUEoaN_vLOdZaz50IpakU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
