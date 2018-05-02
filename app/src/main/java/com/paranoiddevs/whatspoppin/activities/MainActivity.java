@@ -32,16 +32,21 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
 
@@ -52,6 +57,9 @@ public class MainActivity extends BaseActivity
     private DrawerLayout mDrawer;
     private NavigationView mNavView;
     private GoogleMap mMap;
+
+    private List<Marker> mMarkerList;
+    private boolean mFirstRun = true;
 
     /** {@link FusedLocationProviderClient} used to retrieve the users location */
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -151,9 +159,9 @@ public class MainActivity extends BaseActivity
 
     /**
      * Gets the current location using a {@link FusedLocationProviderClient} and then stores the
-     * value as the {@link #mLastKnownLocation} variable if it was successfully retrieved. If no
-     * location was retrieved, the camera is moved to a {@link Constants#DEFAULT_LOCATION} which is
-     * <a href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>.
+     * value as the {@link #mCurrLatLng} variable if it was successfully retrieved. If no location
+     * was retrieved, the camera is moved to a {@link Constants#DEFAULT_LOCATION} which is <a
+     * href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>.
      */
     @SuppressLint("MissingPermission")
     private void getDeviceLocation() {
@@ -165,9 +173,9 @@ public class MainActivity extends BaseActivity
 
     /**
      * Builds and returns the {@link OnCompleteListener} used when retrieving the users location. If
-     * the task is successful, store the user location as {@link #mLastKnownLocation} place a marker
-     * and move the camera there. If the task is <i>not</i> successful, move the camera to our
-     * {@link Constants#DEFAULT_LOCATION}.
+     * the task is successful, store the user location as {@link #mCurrLatLng} place a marker and
+     * move the camera there. If the task is <i>not</i> successful, move the camera to our {@link
+     * Constants#DEFAULT_LOCATION}.
      *
      * @return {@link OnCompleteListener}
      */
@@ -176,10 +184,12 @@ public class MainActivity extends BaseActivity
             @Override
             public void onComplete(@NonNull Task<Location> task) {
                 if (task.isSuccessful()) {
-                    Location location = task.getResult();
                     mCurrLatLng = getCurrLatLng(task.getResult());
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM));
-                    mMap.addMarker(new MarkerOptions().title("Current Location").position(mCurrLatLng));
+                    if (mFirstRun) {
+                        updateCamera();
+                        addLocationsToMap();
+                        mFirstRun = false;
+                    }
                 } else {
                     Log.d(LOG_TAG, "onComplete: Current location is null.");
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
@@ -187,6 +197,31 @@ public class MainActivity extends BaseActivity
                 }
             }
         };
+    }
+
+    private void updateCamera() {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM));
+    }
+
+    private void addLocationsToMap() {
+        mDB.collection(getCollectionName(mCurrLatLng)).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    for (DocumentSnapshot doc : task.getResult()) {
+                        // Build a place object with the given document
+                        Place place = Place.buildNewPlace(doc);
+
+                        // Add a marker to the map
+                        Marker marker = place.addMarkerToMap(mMap);
+
+                        // Store the marker in a list just in case
+                        mMarkerList.add(marker);
+                    }
+                } else
+                    Log.w(LOG_TAG, "onComplete: error getting documents...", task.getException());
+            }
+        });
     }
 
     /**
@@ -198,6 +233,7 @@ public class MainActivity extends BaseActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mDB = FirebaseFirestore.getInstance();
+        mMarkerList = new ArrayList<>();
     }
 
     /**
@@ -222,12 +258,12 @@ public class MainActivity extends BaseActivity
         return new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // Display toast so the user knows something is happening
+                Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
+
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
                     @Override
                     public void onFinish() {
-                        // Display toast so the user knows something is happening
-                        Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
-
                         // Display the AlertDialog for a new location and associated info
                         showNewLocationDialog();
                     }

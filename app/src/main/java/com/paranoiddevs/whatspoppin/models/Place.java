@@ -1,5 +1,10 @@
 package com.paranoiddevs.whatspoppin.models;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.paranoiddevs.whatspoppin.util.Constants;
 
 import java.util.HashMap;
@@ -13,9 +18,16 @@ import java.util.Map;
  */
 
 public class Place {
+    /** Represents the name of the current place. */
     private String mName;
+
+    /** Represents the description of the current place (optional). */
     private String mDesc;
+
+    /** Represents the latitude of the current place. */
     private double mLat;
+
+    /** Represents the longitude of the current place. */
     private double mLng;
 
     private Place() {
@@ -43,22 +55,27 @@ public class Place {
     }
 
     /**
-     * Generates a new {@link Place} object using the provided values and returns it. Since a place
-     * description is optional, this static factory method is for the places that lack one.
+     * Generates a new {@link Place} object using the provided {@link DocumentSnapshot} from the
+     * database and returns it with the stored values.
      *
-     * @param name Name of the place
-     * @param lat  Latitude of the location
-     * @param lng  Longitude of the location
-     *
-     * @return A newly built {@link Place} object.
+     * @param document The DocumentSnapshot containing the Places information
+     * @return A Place object populated with the given values
      */
-    public static Place buildNewPlace(String name, double lat, double lng) {
+    @SuppressWarnings("ConstantConditions") // Values are checked for safety before use
+    public static Place buildNewPlace(DocumentSnapshot document) {
         Place place = new Place();
 
-        place.setName(name);
-        place.setDesc("N/A");
-        place.setLat(lat);
-        place.setLng(lng);
+        if (document.getString("name") != null) place.setName(document.getString("name"));
+        else place.setName("N/A");
+
+        if (document.getString("desc") != null) place.setDesc(document.getString("desc"));
+        else place.setDesc("N/A");
+
+        if (document.getDouble("lat") != null) place.setLat(document.getDouble("lat"));
+        else place.setLat(Constants.DEFAULT_LOCATION.latitude);
+
+        if (document.getDouble("lng") != null) place.setLng(document.getDouble("lng"));
+        else place.setLng(Constants.DEFAULT_LOCATION.longitude);
 
         return place;
     }
@@ -116,5 +133,17 @@ public class Place {
 
     private void setLng(double lng) {
         mLng = lng;
+    }
+
+    /**
+     * Adds the current place to the provided map as a {@link Marker} and returns the generated
+     * Marker object for later use, such as removal or temporarily hiding it.
+     *
+     * @param map {@link GoogleMap} you wish to add the Marker to
+     *
+     * @return Marker that was added to the provided GoogleMap
+     */
+    public Marker addMarkerToMap(GoogleMap map) {
+        return map.addMarker(new MarkerOptions().title(mName).snippet(mDesc).position(new LatLng(mLat, mLng)));
     }
 }
