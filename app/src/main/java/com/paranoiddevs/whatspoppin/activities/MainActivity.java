@@ -45,9 +45,6 @@ import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
 
 public class MainActivity extends BaseActivity
@@ -58,7 +55,6 @@ public class MainActivity extends BaseActivity
     private NavigationView mNavView;
     private GoogleMap mMap;
 
-    private List<Marker> mMarkerList;
     private boolean mFirstRun = true;
 
     /** {@link FusedLocationProviderClient} used to retrieve the users location */
@@ -214,9 +210,6 @@ public class MainActivity extends BaseActivity
 
                         // Add a marker to the map
                         Marker marker = place.addMarkerToMap(mMap);
-
-                        // Store the marker in a list just in case
-                        mMarkerList.add(marker);
                     }
                 } else
                     Log.w(LOG_TAG, "onComplete: error getting documents...", task.getException());
@@ -233,7 +226,6 @@ public class MainActivity extends BaseActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mDB = FirebaseFirestore.getInstance();
-        mMarkerList = new ArrayList<>();
     }
 
     /**
