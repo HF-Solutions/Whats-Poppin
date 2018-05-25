@@ -30,8 +30,8 @@ public class PermissionHelper {
      * @return True/False - The user has granted access to COARSE_LOCATION info
      */
     public static boolean checkPermissions(Context context) {
-        int permissionState = ActivityCompat.checkSelfPermission(context,
-                ACCESS_COARSE_LOCATION);
+        int permissionState = ActivityCompat.checkSelfPermission(context, ACCESS_COARSE_LOCATION) +
+                ActivityCompat.checkSelfPermission(context, ACCESS_FINE_LOCATION);
         return permissionState == PERMISSION_GRANTED;
     }
 
