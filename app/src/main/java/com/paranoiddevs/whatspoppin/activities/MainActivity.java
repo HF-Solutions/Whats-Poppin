@@ -37,7 +37,6 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -49,6 +48,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
+import com.paranoiddevs.whatspoppin.util.LocationService;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 import com.paranoiddevs.whatspoppin.util.PermissionHelper;
 
@@ -240,8 +240,10 @@ public class MainActivity extends BaseActivity
                         Place place = Place.buildNewPlace(doc);
 
                         // Add a marker to the map
-                        Marker marker = place.addMarkerToMap(mMap);
+                        place.addMarkerToMap(mMap);
                     }
+
+                    startService(new Intent(MainActivity.this, LocationService.class));
                 } else
                     Log.w(LOG_TAG, "onComplete: error getting documents...", task.getException());
             }
