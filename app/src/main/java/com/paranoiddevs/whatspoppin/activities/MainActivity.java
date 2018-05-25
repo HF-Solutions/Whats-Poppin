@@ -46,7 +46,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.paranoiddevs.whatspoppin.BuildConfig;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
@@ -62,7 +61,6 @@ import java.util.List;
 import static com.paranoiddevs.whatspoppin.util.Constants.KEY_CAMERA_POSITION;
 import static com.paranoiddevs.whatspoppin.util.Constants.KEY_LOCATION;
 import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
-import static com.paranoiddevs.whatspoppin.util.RequestHelper.buildRequest;
 import static com.paranoiddevs.whatspoppin.util.RequestHelper.downloadUrl;
 
 public class MainActivity extends BaseActivity
@@ -93,8 +91,6 @@ public class MainActivity extends BaseActivity
         setContentView(R.layout.activity_main);
 
         retrieveInstanceState(savedInstanceState);
-
-        System.out.println("BuildConfig.PLACES_API_KEY = " + BuildConfig.PLACES_API_KEY);
 
         setupBaseVars();
         setupNavBar();
@@ -218,9 +214,9 @@ public class MainActivity extends BaseActivity
                 if (task.isSuccessful()) {
                     mLastKnownLatLng = getCurrLatLng(task.getResult());
                     updateCamera();
-                    StringBuilder builder = buildRequest(mLastKnownLatLng);
-                    PlacesTask placesTask = new PlacesTask();
-                    placesTask.execute(builder.toString());
+
+                    addLocationsToMap();
+                    mFirstRun = false;
                 } else {
                     Log.d(LOG_TAG, "onComplete: Current location is null.");
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
