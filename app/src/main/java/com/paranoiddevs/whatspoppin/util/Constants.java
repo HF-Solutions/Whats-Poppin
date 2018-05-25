@@ -28,4 +28,9 @@ public class Constants {
      * href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>
      */
     public static final LatLng DEFAULT_LOCATION = new LatLng(-48.876667, -123.39333);
+
+    public static final String KEY_CAMERA_POSITION = "camera_position";
+    public static final String KEY_LOCATION = "location";
+
+    public static final String[] PLACE_TYPES = new String[]{"bar", "night_club"};
 }

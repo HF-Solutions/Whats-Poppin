@@ -7,7 +7,13 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.paranoiddevs.whatspoppin.util.Constants;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,7 +36,7 @@ public class Place {
     /** Represents the longitude of the current place. */
     private double mLng;
 
-    private Place() {
+    public Place() {
     }
 
     /**
@@ -59,6 +65,7 @@ public class Place {
      * database and returns it with the stored values.
      *
      * @param document The DocumentSnapshot containing the Places information
+     *
      * @return A Place object populated with the given values
      */
     @SuppressWarnings("ConstantConditions") // Values are checked for safety before use
@@ -101,6 +108,66 @@ public class Place {
         out.put(Constants.PLACE_LNG_KEY, mLng);
 
         return out;
+    }
+
+    public List<HashMap<String, String>> parseJSON(JSONObject jsonObject) {
+        JSONArray jPlaces = null;
+
+        try {
+            jPlaces = jsonObject.getJSONArray("results");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        if (jPlaces == null) return new ArrayList<>();
+        else return getPlacesFromJSON(jPlaces);
+    }
+
+    private List<HashMap<String, String>> getPlacesFromJSON(JSONArray jPlaces) {
+        List<HashMap<String, String>> placesList = new ArrayList<>();
+        HashMap<String, String> place;
+
+        for (int x = 0; x < jPlaces.length(); x++) {
+            try {
+                place = getPlaceFromJSON((JSONObject) jPlaces.get(x));
+                placesList.add(place);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return placesList;
+    }
+
+    private HashMap<String, String> getPlaceFromJSON(JSONObject jPlace) {
+        HashMap<String, String> place = new HashMap<>();
+        String placeName = "N/A";
+        String vicinity = "N/A";
+        String latitude;
+        String longitude;
+        String reference;
+
+        try {
+            if (!jPlace.isNull("name"))
+                placeName = jPlace.getString("name");
+
+            if (!jPlace.isNull("vicinity"))
+                vicinity = jPlace.getString("vicinity");
+
+            latitude = jPlace.getJSONObject("geometry").getJSONObject("location").getString("lat");
+            longitude = jPlace.getJSONObject("geometry").getJSONObject("location").getString("lng");
+            reference = jPlace.getString("reference");
+
+            place.put("place_name", placeName);
+            place.put("vicinity", vicinity);
+            place.put("lat", latitude);
+            place.put("lng", longitude);
+            place.put("reference", reference);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return place;
     }
 
     public String getName() {

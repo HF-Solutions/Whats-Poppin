@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.location.Location;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -27,12 +28,17 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.PlaceDetectionClient;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -40,25 +46,36 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.paranoiddevs.whatspoppin.BuildConfig;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
+import com.paranoiddevs.whatspoppin.util.PermissionHelper;
 
-import java.util.ArrayList;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.HashMap;
 import java.util.List;
 
+import static com.paranoiddevs.whatspoppin.util.Constants.KEY_CAMERA_POSITION;
+import static com.paranoiddevs.whatspoppin.util.Constants.KEY_LOCATION;
 import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
+import static com.paranoiddevs.whatspoppin.util.RequestHelper.buildRequest;
+import static com.paranoiddevs.whatspoppin.util.RequestHelper.downloadUrl;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
     private static final String LOG_TAG = "MainActivity";
     private final Context mContext = this;
-    private DrawerLayout mDrawer;
     private NavigationView mNavView;
+    private DrawerLayout mDrawer;
     private GoogleMap mMap;
 
-    private List<Marker> mMarkerList;
+    private PlaceDetectionClient mPlaceDetectionClient;
+    private CameraPosition mCameraPosition;
+
     private boolean mFirstRun = true;
 
     /** {@link FusedLocationProviderClient} used to retrieve the users location */
@@ -67,13 +84,17 @@ public class MainActivity extends BaseActivity
     /** The FirebaseFirestore connection to our pin data */
     private FirebaseFirestore mDB;
 
-    /** The current {@link LatLng} for where the device is currently located. */
-    private LatLng mCurrLatLng;
+    /** The last known {@link LatLng} for where the device is located. */
+    private LatLng mLastKnownLatLng;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        retrieveInstanceState(savedInstanceState);
+
+        System.out.println("BuildConfig.PLACES_API_KEY = " + BuildConfig.PLACES_API_KEY);
 
         setupBaseVars();
         setupNavBar();
@@ -100,12 +121,14 @@ public class MainActivity extends BaseActivity
         mMap = googleMap;
 
         mMap.setInfoWindowAdapter(new MapInfoAdapter(this));
+        if (mCameraPosition != null)
+            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(mCameraPosition));
 
-        if (checkPermissions()) {
+        if (PermissionHelper.checkPermissions(this)) {
             updateUI();
 
             getDeviceLocation();
-        } else requestPermissions();
+        } else PermissionHelper.requestPermissions(this);
     }
 
     @Override
@@ -147,35 +170,44 @@ public class MainActivity extends BaseActivity
     private void updateUI() {
         if (mMap == null) return;
 
-        if (checkPermissions()) {
+        if (PermissionHelper.checkPermissions(this)) {
             mMap.setMyLocationEnabled(true);
             mMap.getUiSettings().setMyLocationButtonEnabled(true);
         } else {
             mMap.setMyLocationEnabled(false);
             mMap.getUiSettings().setMyLocationButtonEnabled(false);
-            requestPermissions();
+            PermissionHelper.requestPermissions(this);
         }
     }
 
     /**
      * Gets the current location using a {@link FusedLocationProviderClient} and then stores the
-     * value as the {@link #mCurrLatLng} variable if it was successfully retrieved. If no location
-     * was retrieved, the camera is moved to a {@link Constants#DEFAULT_LOCATION} which is <a
-     * href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>.
+     * value as the {@link #mLastKnownLatLng} variable if it was successfully retrieved. If no
+     * location was retrieved, the camera is moved to a {@link Constants#DEFAULT_LOCATION} which is
+     * <a href="https://en.wikipedia.org/wiki/Pole_of_inaccessibility">Point Nemo</a>.
      */
     @SuppressLint("MissingPermission")
     private void getDeviceLocation() {
-        if (checkPermissions()) {
+        if (PermissionHelper.checkPermissions(this)) {
             Task<Location> locationResult = mFusedLocationProviderClient.getLastLocation();
             locationResult.addOnCompleteListener(this, getOnCompleteListener());
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (mMap != null) {
+            outState.putParcelable(KEY_CAMERA_POSITION, mMap.getCameraPosition());
+            outState.putParcelable(KEY_LOCATION, mLastKnownLatLng);
+            super.onSaveInstanceState(outState);
+        }
+    }
+
     /**
      * Builds and returns the {@link OnCompleteListener} used when retrieving the users location. If
-     * the task is successful, store the user location as {@link #mCurrLatLng} place a marker and
-     * move the camera there. If the task is <i>not</i> successful, move the camera to our {@link
-     * Constants#DEFAULT_LOCATION}.
+     * the task is successful, store the user location as {@link #mLastKnownLatLng} place a marker
+     * and move the camera there. If the task is <i>not</i> successful, move the camera to our
+     * {@link Constants#DEFAULT_LOCATION}.
      *
      * @return {@link OnCompleteListener}
      */
@@ -184,12 +216,11 @@ public class MainActivity extends BaseActivity
             @Override
             public void onComplete(@NonNull Task<Location> task) {
                 if (task.isSuccessful()) {
-                    mCurrLatLng = getCurrLatLng(task.getResult());
-                    if (mFirstRun) {
-                        updateCamera();
-                        addLocationsToMap();
-                        mFirstRun = false;
-                    }
+                    mLastKnownLatLng = getCurrLatLng(task.getResult());
+                    updateCamera();
+                    StringBuilder builder = buildRequest(mLastKnownLatLng);
+                    PlacesTask placesTask = new PlacesTask();
+                    placesTask.execute(builder.toString());
                 } else {
                     Log.d(LOG_TAG, "onComplete: Current location is null.");
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(Constants.DEFAULT_LOCATION, Constants.DEFAULT_ZOOM));
@@ -200,11 +231,11 @@ public class MainActivity extends BaseActivity
     }
 
     private void updateCamera() {
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM));
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mLastKnownLatLng, Constants.DEFAULT_ZOOM));
     }
 
     private void addLocationsToMap() {
-        mDB.collection(getCollectionName(mCurrLatLng)).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        mDB.collection(getCollectionName(mLastKnownLatLng)).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
@@ -214,9 +245,6 @@ public class MainActivity extends BaseActivity
 
                         // Add a marker to the map
                         Marker marker = place.addMarkerToMap(mMap);
-
-                        // Store the marker in a list just in case
-                        mMarkerList.add(marker);
                     }
                 } else
                     Log.w(LOG_TAG, "onComplete: error getting documents...", task.getException());
@@ -233,7 +261,7 @@ public class MainActivity extends BaseActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mDB = FirebaseFirestore.getInstance();
-        mMarkerList = new ArrayList<>();
+        mPlaceDetectionClient = Places.getPlaceDetectionClient(this);
     }
 
     /**
@@ -261,7 +289,7 @@ public class MainActivity extends BaseActivity
                 // Display toast so the user knows something is happening
                 Toast.makeText(mContext, "Loading...", Toast.LENGTH_SHORT).show();
 
-                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mCurrLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mLastKnownLatLng, Constants.DEFAULT_ZOOM), new GoogleMap.CancelableCallback() {
                     @Override
                     public void onFinish() {
                         // Display the AlertDialog for a new location and associated info
@@ -339,7 +367,7 @@ public class MainActivity extends BaseActivity
                 } else {
                     Place place = Place.buildNewPlace(
                             getTextContent(locationName), getTextContent(locationDesc),
-                            mCurrLatLng.latitude, mCurrLatLng.longitude);
+                            mLastKnownLatLng.latitude, mLastKnownLatLng.longitude);
 
                     mDB.collection(getCollectionName(place.getLat(), place.getLng())).add(place.convertToMap())
                             .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
@@ -388,5 +416,77 @@ public class MainActivity extends BaseActivity
         title.setTypeface(Typeface.createFromAsset(getAssets(), "font/Lobster.ttf"));
 
         return toolbar;
+    }
+
+    private void retrieveInstanceState(Bundle savedInstanceState) {
+        if (savedInstanceState != null) {
+            mLastKnownLatLng = savedInstanceState.getParcelable(KEY_LOCATION);
+            mCameraPosition = savedInstanceState.getParcelable(KEY_CAMERA_POSITION);
+        }
+    }
+
+    private class PlacesTask extends AsyncTask<String, Integer, String> {
+        String data = null;
+
+        @Override
+        protected String doInBackground(String... strings) {
+            try {
+                data = downloadUrl(strings[0]);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "doInBackground: ", e);
+            }
+
+            return data;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            ParserTask task = new ParserTask();
+            task.execute(result);
+        }
+    }
+
+    private class ParserTask extends AsyncTask<String, Integer, List<HashMap<String, String>>> {
+        JSONObject jObject;
+
+        @Override
+        protected List<HashMap<String, String>> doInBackground(String... strings) {
+            List<HashMap<String, String>> places = null;
+            Place place = new Place();
+
+            try {
+                jObject = new JSONObject(strings[0]);
+                places = place.parseJSON(jObject);
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, "doInBackground: ", e);
+            }
+
+            return places;
+        }
+
+        @Override
+        protected void onPostExecute(List<HashMap<String, String>> list) {
+            if (!mFirstRun) mMap.clear();
+
+            mFirstRun = false;
+
+            for (int x = 0; x < list.size(); x++) {
+                MarkerOptions opts = new MarkerOptions();
+                HashMap<String, String> hmPlace = list.get(x);
+
+                double lat = Double.parseDouble(hmPlace.get("lat"));
+                double lng = Double.parseDouble(hmPlace.get("lng"));
+
+                String name = hmPlace.get("place_name");
+                String vicinity = hmPlace.get("vicinity");
+                LatLng latLng = new LatLng(lat, lng);
+
+                opts.position(latLng);
+                opts.title(name + " : " + vicinity);
+                opts.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_MAGENTA));
+
+                mMap.addMarker(opts);
+            }
+        }
     }
 }
