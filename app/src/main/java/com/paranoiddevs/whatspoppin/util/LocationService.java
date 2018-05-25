@@ -1,5 +1,6 @@
 package com.paranoiddevs.whatspoppin.util;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +10,20 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceDetectionClient;
+import com.google.android.gms.location.places.PlaceLikelihood;
+import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+
+import static com.google.android.gms.location.places.Place.TYPE_BAR;
+import static com.google.android.gms.location.places.Place.TYPE_NIGHT_CLUB;
 
 /**
  * <p>Created by Alcha on May 25, 2018 @ 14:46.</p>
@@ -20,6 +34,15 @@ public class LocationService extends Service {
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
+
+    /** {@link FusedLocationProviderClient} used to retrieve the users location */
+    private FusedLocationProviderClient mFusedLocationProviderClient;
+
+    /**
+     * {@link com.google.android.gms.location.places.PlaceDetectionClient} used to retrieve the most
+     * likely place the user is currently at.
+     */
+    private PlaceDetectionClient mPlaceDetectionClient;
 
     private class LocationListener implements android.location.LocationListener {
         Location mLastLocation;
@@ -33,6 +56,7 @@ public class LocationService extends Service {
         public void onLocationChanged(Location location) {
             Log.e(LOG_TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+            performPlaceCheck();
         }
 
         @Override
@@ -72,6 +96,7 @@ public class LocationService extends Service {
     public void onCreate() {
         Log.e(LOG_TAG, "onCreate");
         initializeLocationManager();
+        initializeLocationClient();
 
         try {
             mLocationManager.requestLocationUpdates(
@@ -93,6 +118,52 @@ public class LocationService extends Service {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private void initializeLocationClient() {
+        mPlaceDetectionClient = Places.getPlaceDetectionClient(this);
+    }
+
+    @SuppressLint("MissingPermission")  // Permission check is made before this is called
+    private void performPlaceCheck() {
+        if (PermissionHelper.checkPermissions(this)) {
+            Task<PlaceLikelihoodBufferResponse> placeResult = mPlaceDetectionClient.getCurrentPlace(null);
+            placeResult.addOnCompleteListener(new OnCompleteListener<PlaceLikelihoodBufferResponse>() {
+                @Override
+                public void onComplete(@NonNull Task<PlaceLikelihoodBufferResponse> task) {
+                    if (task.isSuccessful()) {
+                        PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
+                        Place currentPlace = getMostLikelyPlace(likelyPlaces);
+
+                        if (currentPlace != null) {
+                            System.out.println("WE'S AT A BAR, BITCHES!");
+                            // TODO: Ask the user if this place is poppin'.
+                        }
+
+                        likelyPlaces.release();
+                    }
+                }
+            });
+        }
+    }
+
+    private Place getMostLikelyPlace(PlaceLikelihoodBufferResponse likelyPlaces) {
+        float maxLikelihood = 0f;
+        Place currentPlace = null;
+
+        for (PlaceLikelihood placeLikelihood : likelyPlaces) {
+            if (placeLikelihood.getPlace().getPlaceTypes().contains(TYPE_NIGHT_CLUB) ||
+                    placeLikelihood.getPlace().getPlaceTypes().contains(TYPE_BAR)) {
+
+                if (maxLikelihood < placeLikelihood.getLikelihood()) {
+                    maxLikelihood = placeLikelihood.getLikelihood();
+                    currentPlace = placeLikelihood.getPlace();
+                }
+            }
+        }
+
+        return currentPlace;
+    }
+
     @Override
     public void onDestroy() {
         Log.e(LOG_TAG, "onDestroy");
@@ -102,7 +173,7 @@ public class LocationService extends Service {
                 try {
                     mLocationManager.removeUpdates(mLocationListener);
                 } catch (Exception ex) {
-                    Log.i(LOG_TAG, "fail to remove location listners, ignore", ex);
+                    Log.i(LOG_TAG, "fail to remove location listeners, ignore", ex);
                 }
             }
         }
