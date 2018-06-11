@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -13,7 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.paranoiddevs.whatspoppin.R;
+import com.hfsolutions.whatspoppin.R;
 
 public class FeedbackActivity extends AppCompatActivity {
     private static final String LOG_TAG = "FeedbackActivity";

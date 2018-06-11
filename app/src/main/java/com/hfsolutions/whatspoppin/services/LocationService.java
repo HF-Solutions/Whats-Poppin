@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.services;
+package com.hfsolutions.whatspoppin.services;
 
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -23,12 +23,12 @@ import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.paranoiddevs.whatspoppin.util.PermissionHelper;
+import com.hfsolutions.whatspoppin.util.PermissionHelper;
 
 import static com.google.android.gms.location.places.Place.TYPE_BAR;
 import static com.google.android.gms.location.places.Place.TYPE_NIGHT_CLUB;
-import static com.paranoiddevs.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
-import static com.paranoiddevs.whatspoppin.util.NotificationHelper.buildNotification;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
+import static com.hfsolutions.whatspoppin.util.NotificationHelper.buildNotification;
 
 /**
  * <p>Created by Alcha on May 25, 2018 @ 14:46.</p>

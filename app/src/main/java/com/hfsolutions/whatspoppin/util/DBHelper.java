@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.hfsolutions.whatspoppin.util;
 
 import com.google.android.gms.maps.model.LatLng;
 

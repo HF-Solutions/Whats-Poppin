@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
 import android.location.Location;

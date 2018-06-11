@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -20,7 +20,7 @@ import android.support.v7.app.ActionBar;
 import android.text.TextUtils;
 import android.view.MenuItem;
 
-import com.paranoiddevs.whatspoppin.R;
+import com.hfsolutions.whatspoppin.R;
 
 import java.util.List;
 

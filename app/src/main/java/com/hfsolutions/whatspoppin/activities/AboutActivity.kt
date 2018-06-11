@@ -1,10 +1,10 @@
-package com.paranoiddevs.whatspoppin.activities
+package com.hfsolutions.whatspoppin.activities
 
 import android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
-import com.paranoiddevs.whatspoppin.R
+import com.hfsolutions.whatspoppin.R
 
 class AboutActivity : AppCompatActivity() {
 

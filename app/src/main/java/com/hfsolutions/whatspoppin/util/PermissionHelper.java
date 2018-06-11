@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.hfsolutions.whatspoppin.util;
 
 import android.app.Activity;
 import android.content.Context;

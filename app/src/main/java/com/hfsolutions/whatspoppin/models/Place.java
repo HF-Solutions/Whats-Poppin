@@ -1,11 +1,11 @@
-package com.paranoiddevs.whatspoppin.models;
+package com.hfsolutions.whatspoppin.models;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.paranoiddevs.whatspoppin.util.Constants;
+import com.hfsolutions.whatspoppin.util.Constants;
 
 import org.json.JSONArray;
 import org.json.JSONException;

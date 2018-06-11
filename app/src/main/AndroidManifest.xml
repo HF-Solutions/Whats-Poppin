@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.paranoiddevs.whatspoppin">
+          package="com.hfsolutions.whatspoppin">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -36,21 +36,21 @@
             android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.paranoiddevs.whatspoppin.activities.MainActivity" />
+                android:value="com.hfsolutions.whatspoppin.activities.MainActivity" />
         </activity>
         <activity
             android:name=".activities.FeedbackActivity"
             android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.paranoiddevs.whatspoppin.activities.MainActivity" />
+                android:value="com.hfsolutions.whatspoppin.activities.MainActivity" />
         </activity>
         <activity
             android:name=".activities.AboutActivity"
             android:parentActivityName=".activities.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.paranoiddevs.whatspoppin.activities.MainActivity" />
+                android:value="com.hfsolutions.whatspoppin.activities.MainActivity" />
         </activity>
         <activity
             android:name=".activities.IsItPoppinActivity"

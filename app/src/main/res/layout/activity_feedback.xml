@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.paranoiddevs.whatspoppin.activities.FeedbackActivity">
+    tools:context="com.hfsolutions.whatspoppin.activities.FeedbackActivity">
 
     <EditText
         android:id="@+id/edit_text_feedback"

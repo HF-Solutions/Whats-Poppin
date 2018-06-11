@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -43,12 +43,12 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.paranoiddevs.whatspoppin.R;
-import com.paranoiddevs.whatspoppin.models.Place;
-import com.paranoiddevs.whatspoppin.util.Constants;
-import com.paranoiddevs.whatspoppin.services.LocationService;
-import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
-import com.paranoiddevs.whatspoppin.util.PermissionHelper;
+import com.hfsolutions.whatspoppin.R;
+import com.hfsolutions.whatspoppin.models.Place;
+import com.hfsolutions.whatspoppin.util.Constants;
+import com.hfsolutions.whatspoppin.services.LocationService;
+import com.hfsolutions.whatspoppin.util.MapInfoAdapter;
+import com.hfsolutions.whatspoppin.util.PermissionHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,10 +56,10 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.paranoiddevs.whatspoppin.util.Constants.KEY_CAMERA_POSITION;
-import static com.paranoiddevs.whatspoppin.util.Constants.KEY_LOCATION;
-import static com.paranoiddevs.whatspoppin.util.DBHelper.getCollectionName;
-import static com.paranoiddevs.whatspoppin.util.RequestHelper.downloadUrl;
+import static com.hfsolutions.whatspoppin.util.Constants.KEY_CAMERA_POSITION;
+import static com.hfsolutions.whatspoppin.util.Constants.KEY_LOCATION;
+import static com.hfsolutions.whatspoppin.util.DBHelper.getCollectionName;
+import static com.hfsolutions.whatspoppin.util.RequestHelper.downloadUrl;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {

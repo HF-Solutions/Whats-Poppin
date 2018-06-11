@@ -1,10 +1,10 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.hfsolutions.whatspoppin.util;
 
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.paranoiddevs.whatspoppin.BuildConfig;
+import com.hfsolutions.whatspoppin.BuildConfig;
 
 import java.io.BufferedReader;
 import java.io.IOException;

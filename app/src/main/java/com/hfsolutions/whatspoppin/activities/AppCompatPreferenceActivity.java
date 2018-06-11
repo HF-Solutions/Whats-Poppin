@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.content.res.Configuration;
 import android.os.Bundle;

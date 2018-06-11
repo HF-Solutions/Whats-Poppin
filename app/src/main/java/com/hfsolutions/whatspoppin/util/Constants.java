@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.hfsolutions.whatspoppin.util;
 
 import com.google.android.gms.maps.model.LatLng;
 
@@ -7,7 +7,7 @@ import com.google.android.gms.maps.model.LatLng;
  * app.
  */
 public class Constants {
-    // Constants used by the {@link com.paranoiddevs.whatspoppin.models.Place} model.
+    // Constants used by the {@link com.hfsolutions.whatspoppin.models.Place} model.
     /** Represents the key value for a places name in their converted map. */
     public static final String PLACE_NAME_KEY = "name";
 

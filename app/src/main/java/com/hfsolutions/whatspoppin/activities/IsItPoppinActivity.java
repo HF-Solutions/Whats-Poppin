@@ -1,12 +1,12 @@
-package com.paranoiddevs.whatspoppin.activities;
+package com.hfsolutions.whatspoppin.activities;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationManagerCompat;
 
-import static com.paranoiddevs.whatspoppin.util.Constants.PLACE_ID_KEY;
-import static com.paranoiddevs.whatspoppin.util.Constants.PLACE_POPPIN_KEY;
-import static com.paranoiddevs.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_ID_KEY;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_KEY;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
 
 /**
  * <p>Created by Alcha on Jun 11, 2018 @ 13:24.</p>

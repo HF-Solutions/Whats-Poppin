@@ -1,4 +1,4 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.hfsolutions.whatspoppin.util;
 
 import android.app.Activity;
 import android.view.View;
@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
-import com.paranoiddevs.whatspoppin.R;
+import com.hfsolutions.whatspoppin.R;
 
 /**
  * <p>Created by Alcha on Mar 27, 2018 @ 22:42.</p>
