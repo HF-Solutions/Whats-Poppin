@@ -28,8 +28,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.places.PlaceDetectionClient;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -48,7 +46,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.paranoiddevs.whatspoppin.R;
 import com.paranoiddevs.whatspoppin.models.Place;
 import com.paranoiddevs.whatspoppin.util.Constants;
-import com.paranoiddevs.whatspoppin.util.LocationService;
+import com.paranoiddevs.whatspoppin.services.LocationService;
 import com.paranoiddevs.whatspoppin.util.MapInfoAdapter;
 import com.paranoiddevs.whatspoppin.util.PermissionHelper;
 
@@ -71,7 +69,6 @@ public class MainActivity extends BaseActivity
     private DrawerLayout mDrawer;
     private GoogleMap mMap;
 
-    private PlaceDetectionClient mPlaceDetectionClient;
     private CameraPosition mCameraPosition;
 
     private boolean mFirstRun = true;
@@ -259,7 +256,6 @@ public class MainActivity extends BaseActivity
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mDB = FirebaseFirestore.getInstance();
-        mPlaceDetectionClient = Places.getPlaceDetectionClient(this);
     }
 
     /**

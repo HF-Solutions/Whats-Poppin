@@ -33,4 +33,8 @@ public class Constants {
     public static final String KEY_LOCATION = "location";
 
     public static final String[] PLACE_TYPES = new String[]{"bar", "night_club"};
+
+    public static final String PLACE_ID_KEY = "place_id";
+    public static final String PLACE_POPPIN_KEY = "place_poppin_response";
+    public static final int PLACE_POPPIN_NOTI_ID = 42;
 }

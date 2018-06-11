@@ -1,6 +1,7 @@
-package com.paranoiddevs.whatspoppin.util;
+package com.paranoiddevs.whatspoppin.services;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -21,9 +23,12 @@ import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.paranoiddevs.whatspoppin.util.PermissionHelper;
 
 import static com.google.android.gms.location.places.Place.TYPE_BAR;
 import static com.google.android.gms.location.places.Place.TYPE_NIGHT_CLUB;
+import static com.paranoiddevs.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
+import static com.paranoiddevs.whatspoppin.util.NotificationHelper.buildNotification;
 
 /**
  * <p>Created by Alcha on May 25, 2018 @ 14:46.</p>
@@ -34,6 +39,7 @@ public class LocationService extends Service {
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
+    private Place mLastKnownPlace;
 
     /** {@link FusedLocationProviderClient} used to retrieve the users location */
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -135,8 +141,8 @@ public class LocationService extends Service {
                         Place currentPlace = getMostLikelyPlace(likelyPlaces);
 
                         if (currentPlace != null) {
-                            System.out.println("WE'S AT A BAR, BITCHES!");
-                            // TODO: Ask the user if this place is poppin'.
+                            Notification notification = buildNotification(currentPlace, getApplicationContext());
+                            NotificationManagerCompat.from(LocationService.this).notify(PLACE_POPPIN_NOTI_ID, notification);
                         }
 
                         likelyPlaces.release();
