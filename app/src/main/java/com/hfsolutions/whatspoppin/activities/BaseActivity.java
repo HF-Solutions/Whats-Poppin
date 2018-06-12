@@ -1,6 +1,7 @@
 package com.hfsolutions.whatspoppin.activities;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.location.Location;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.widget.EditText;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.hfsolutions.whatspoppin.services.LocationService;
 
 /**
  * <p>Created by Alcha on Mar 27, 2018 @ 19:40.</p>
@@ -58,5 +60,9 @@ public class BaseActivity extends AppCompatActivity {
      */
     protected String getTextContent(EditText editText) {
         return editText.getText().toString().trim();
+    }
+
+    protected void startLocationService() {
+        startService(new Intent(this, LocationService.class));
     }
 }

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.google.android.gms.location.places.Place;
 import com.hfsolutions.whatspoppin.R;
@@ -29,6 +30,8 @@ public class NotificationHelper {
     private static final String IS_IT_POPPIN_CHANNEL_ID = "isitpoppin'?";
 
     private static final int INTENT_FLAGS = PendingIntent.FLAG_CANCEL_CURRENT;
+
+    private static final String LOG_TAG = "NotificationHelper";
 
     /**
      * Create a {@link NotificationChannel} for use on devices running Android O or later when
@@ -75,7 +78,7 @@ public class NotificationHelper {
     private static PendingIntent getYesIntent(Context context, Place place) {
         Intent intent = getIntent(context, place, true);
 
-        int requestId = (int) System.currentTimeMillis();
+        int requestId = (int) (System.currentTimeMillis() + 4029);
 
         return PendingIntent.getActivity(context, requestId, intent, INTENT_FLAGS);
     }
@@ -83,7 +86,7 @@ public class NotificationHelper {
     private static PendingIntent getNoIntent(Context context, Place place) {
         Intent intent = getIntent(context, place, false);
 
-        int requestId = (int) System.currentTimeMillis();
+        int requestId = (int) (System.currentTimeMillis() + 2940);
 
         return PendingIntent.getActivity(context, requestId, intent, INTENT_FLAGS);
     }
@@ -93,6 +96,9 @@ public class NotificationHelper {
 
         intent.putExtra(PLACE_ID_KEY, place.getId());
         intent.putExtra(PLACE_POPPIN_KEY, isIt);
+
+        Log.d(LOG_TAG, "place.getId() = " + place.getId());
+        Log.d(LOG_TAG, "isIt = " + isIt);
 
         return intent;
     }

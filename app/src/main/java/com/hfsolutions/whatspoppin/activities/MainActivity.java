@@ -46,7 +46,6 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.hfsolutions.whatspoppin.R;
 import com.hfsolutions.whatspoppin.models.Place;
 import com.hfsolutions.whatspoppin.util.Constants;
-import com.hfsolutions.whatspoppin.services.LocationService;
 import com.hfsolutions.whatspoppin.util.MapInfoAdapter;
 import com.hfsolutions.whatspoppin.util.PermissionHelper;
 
@@ -105,8 +104,11 @@ public class MainActivity extends BaseActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         updateUI();
 
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE)
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             getDeviceLocation();
+
+            startLocationService();
+        }
     }
 
     @Override
@@ -121,6 +123,8 @@ public class MainActivity extends BaseActivity
             updateUI();
 
             getDeviceLocation();
+
+            startLocationService();
         } else PermissionHelper.requestPermissions(this);
     }
 
@@ -239,8 +243,6 @@ public class MainActivity extends BaseActivity
                         // Add a marker to the map
                         place.addMarkerToMap(mMap);
                     }
-
-                    startService(new Intent(MainActivity.this, LocationService.class));
                 } else
                     Log.w(LOG_TAG, "onComplete: error getting documents...", task.getException());
             }

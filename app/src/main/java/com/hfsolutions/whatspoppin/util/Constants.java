@@ -37,4 +37,7 @@ public class Constants {
     public static final String PLACE_ID_KEY = "place_id";
     public static final String PLACE_POPPIN_KEY = "place_poppin_response";
     public static final int PLACE_POPPIN_NOTI_ID = 42;
+    public static final String PLACE_TIMESTAMP = "place_timestamp";
+    public static final String PLACE_RESPONSE_RECEIVED = "place_response_received";
+    public static final String SHARED_PREFERENCES_ID = "HF-Solutions-Preferences";
 }

@@ -23,11 +23,19 @@ import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.hfsolutions.whatspoppin.util.Constants;
 import com.hfsolutions.whatspoppin.util.PermissionHelper;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import static com.google.android.gms.location.places.Place.TYPE_BAR;
 import static com.google.android.gms.location.places.Place.TYPE_NIGHT_CLUB;
 import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_RESPONSE_RECEIVED;
+import static com.hfsolutions.whatspoppin.util.Constants.PLACE_TIMESTAMP;
+import static com.hfsolutions.whatspoppin.util.Constants.SHARED_PREFERENCES_ID;
 import static com.hfsolutions.whatspoppin.util.NotificationHelper.buildNotification;
 
 /**
@@ -35,11 +43,11 @@ import static com.hfsolutions.whatspoppin.util.NotificationHelper.buildNotificat
  */
 public class LocationService extends Service {
     private static final String LOG_TAG = "LocationService";
-    private static final int MS_PER_SEC = 60000;
+    private static final int MS_PER_MIN = 60000;
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
-    private Place mLastKnownPlace;
+    private boolean mFirstTimestamp = true;
 
     /** {@link FusedLocationProviderClient} used to retrieve the users location */
     private FusedLocationProviderClient mFusedLocationProviderClient;
@@ -103,6 +111,7 @@ public class LocationService extends Service {
         Log.e(LOG_TAG, "onCreate");
         initializeLocationManager();
         initializeLocationClient();
+        initializePreferences();
 
         try {
             mLocationManager.requestLocationUpdates(
@@ -124,6 +133,15 @@ public class LocationService extends Service {
         }
     }
 
+    private void initializePreferences() {
+        SharedPreferences.Editor editor = getSharedPreferences(SHARED_PREFERENCES_ID, MODE_PRIVATE).edit();
+
+        editor.remove(PLACE_TIMESTAMP);
+        editor.remove(PLACE_RESPONSE_RECEIVED);
+
+        editor.apply();
+    }
+
     @SuppressLint("MissingPermission")
     private void initializeLocationClient() {
         mPlaceDetectionClient = Places.getPlaceDetectionClient(this);
@@ -140,7 +158,7 @@ public class LocationService extends Service {
                         PlaceLikelihoodBufferResponse likelyPlaces = task.getResult();
                         Place currentPlace = getMostLikelyPlace(likelyPlaces);
 
-                        if (currentPlace != null) {
+                        if (currentPlace != null && checkNotificationPreReqs()) {
                             Notification notification = buildNotification(currentPlace, getApplicationContext());
                             NotificationManagerCompat.from(LocationService.this).notify(PLACE_POPPIN_NOTI_ID, notification);
                         }
@@ -150,6 +168,45 @@ public class LocationService extends Service {
                 }
             });
         }
+    }
+
+    public int getCurrTime() {
+        SimpleDateFormat formatter = new SimpleDateFormat("HHmm", Locale.US);
+        String formattedDate = formatter.format(new Date());
+
+        return Integer.valueOf(formattedDate);
+    }
+
+    private boolean checkNotificationPreReqs() {
+        SharedPreferences preferences = getSharedPreferences(SHARED_PREFERENCES_ID, MODE_PRIVATE);
+
+        // User has already responded, don't notify them again
+        if (userHasResponded(preferences)) return false;
+
+        int timestamp = preferences.getInt(PLACE_TIMESTAMP, getCurrTime());
+        int diff = getCurrTime() - timestamp;
+
+        System.out.println("getCurrTime() = " + getCurrTime());
+        System.out.println("diff = " + diff);
+
+        if (mFirstTimestamp) {
+            mFirstTimestamp = false;
+
+            updateTimestampPref(preferences, timestamp);
+        }
+
+        return diff >= 5;
+    }
+
+    private void updateTimestampPref(SharedPreferences preferences, int timestamp) {
+        SharedPreferences.Editor editor = preferences.edit();
+
+        editor.putInt(PLACE_TIMESTAMP, timestamp);
+        editor.apply();
+    }
+
+    private boolean userHasResponded(SharedPreferences preferences) {
+        return preferences.getBoolean(Constants.PLACE_RESPONSE_RECEIVED, false);
     }
 
     private Place getMostLikelyPlace(PlaceLikelihoodBufferResponse likelyPlaces) {
@@ -189,7 +246,7 @@ public class LocationService extends Service {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String syncInterval = sharedPreferences.getString("sync_frequency", "15");
 
-        return Integer.parseInt(syncInterval) * MS_PER_SEC;
+        return MS_PER_MIN;
     }
 
     private void initializeLocationManager() {

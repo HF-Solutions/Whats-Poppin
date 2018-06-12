@@ -8,6 +8,54 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:109899503624:android:1cff3f993e4a072d",
+        "android_client_info": {
+          "package_name": "com.hfsolutions.whatspoppin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109899503624-i12rkbtpu4tkt8rpeoj908uhu13eqrh7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hfsolutions.whatspoppin",
+            "certificate_hash": "47175668a9c7dd36f0dac374dee6ef910ae439f9"
+          }
+        },
+        {
+          "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCE702t2e9AMwDUEoaN_vLOdZaz50IpakU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:109899503624:android:e2a649ba378065e7",
         "android_client_info": {
           "package_name": "com.paranoiddevs.whatspoppin"
@@ -21,6 +69,10 @@
             "package_name": "com.paranoiddevs.whatspoppin",
             "certificate_hash": "9440d76bca2269c8334594f8a58e1a102eedf0e0"
           }
+        },
+        {
+          "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
+          "client_type": 3
         },
         {
           "client_id": "109899503624-1eb4gu14aef7mgjgua4n5chomtikck9l.apps.googleusercontent.com",
