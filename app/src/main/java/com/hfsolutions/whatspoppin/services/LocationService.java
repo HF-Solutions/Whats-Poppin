@@ -23,7 +23,6 @@ import com.google.android.gms.location.places.PlaceLikelihoodBufferResponse;
 import com.google.android.gms.location.places.Places;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.hfsolutions.whatspoppin.util.Constants;
 import com.hfsolutions.whatspoppin.util.PermissionHelper;
 
 import java.text.SimpleDateFormat;
@@ -161,6 +160,7 @@ public class LocationService extends Service {
                         if (currentPlace != null && checkNotificationPreReqs()) {
                             Notification notification = buildNotification(currentPlace, getApplicationContext());
                             NotificationManagerCompat.from(LocationService.this).notify(PLACE_POPPIN_NOTI_ID, notification);
+                            setRespondedFlag();
                         }
 
                         likelyPlaces.release();
@@ -168,6 +168,12 @@ public class LocationService extends Service {
                 }
             });
         }
+    }
+
+    private void setRespondedFlag() {
+        SharedPreferences.Editor editor = getSharedPreferences(SHARED_PREFERENCES_ID, MODE_PRIVATE).edit();
+        editor.putBoolean(PLACE_RESPONSE_RECEIVED, true);
+        editor.apply();
     }
 
     public int getCurrTime() {
@@ -186,16 +192,16 @@ public class LocationService extends Service {
         int timestamp = preferences.getInt(PLACE_TIMESTAMP, getCurrTime());
         int diff = getCurrTime() - timestamp;
 
-        System.out.println("getCurrTime() = " + getCurrTime());
-        System.out.println("diff = " + diff);
-
         if (mFirstTimestamp) {
             mFirstTimestamp = false;
 
             updateTimestampPref(preferences, timestamp);
+        } else if (diff >= 5) {
+            updateTimestampPref(preferences, getCurrTime());
+            return true;
         }
 
-        return diff >= 5;
+        return false;
     }
 
     private void updateTimestampPref(SharedPreferences preferences, int timestamp) {
@@ -206,7 +212,7 @@ public class LocationService extends Service {
     }
 
     private boolean userHasResponded(SharedPreferences preferences) {
-        return preferences.getBoolean(Constants.PLACE_RESPONSE_RECEIVED, false);
+        return preferences.getBoolean(PLACE_RESPONSE_RECEIVED, false);
     }
 
     private Place getMostLikelyPlace(PlaceLikelihoodBufferResponse likelyPlaces) {

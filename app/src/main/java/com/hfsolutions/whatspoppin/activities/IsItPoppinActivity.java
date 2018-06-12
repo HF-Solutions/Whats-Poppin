@@ -1,6 +1,5 @@
 package com.hfsolutions.whatspoppin.activities;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationManagerCompat;
@@ -8,8 +7,6 @@ import android.support.v4.app.NotificationManagerCompat;
 import static com.hfsolutions.whatspoppin.util.Constants.PLACE_ID_KEY;
 import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_KEY;
 import static com.hfsolutions.whatspoppin.util.Constants.PLACE_POPPIN_NOTI_ID;
-import static com.hfsolutions.whatspoppin.util.Constants.PLACE_RESPONSE_RECEIVED;
-import static com.hfsolutions.whatspoppin.util.Constants.SHARED_PREFERENCES_ID;
 
 /**
  * <p>Created by Alcha on Jun 11, 2018 @ 13:24.</p>
@@ -22,18 +19,8 @@ public class IsItPoppinActivity extends BaseActivity {
         System.out.println("getIntent().getStringExtra(PLACE_ID_KEY); = " + getIntent().getStringExtra(PLACE_ID_KEY));
         System.out.println("getIntent().getStringExtra(PLACE_POPPIN_KEY); = " + getIntent().getBooleanExtra(PLACE_POPPIN_KEY, false));
 
-        updateUserResponsePreference();
-
         NotificationManagerCompat.from(this).cancel(PLACE_POPPIN_NOTI_ID);
 
         finish();
-    }
-
-    private void updateUserResponsePreference() {
-        SharedPreferences.Editor editor = getSharedPreferences(SHARED_PREFERENCES_ID, MODE_PRIVATE).edit();
-
-        editor.putBoolean(PLACE_RESPONSE_RECEIVED, true);
-
-        editor.apply();
     }
 }
